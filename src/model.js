@@ -32,7 +32,7 @@ class Model {
 	}
 	put( type, ...params ) {
 		// not valid action
-		if( typeof type === 'undefined' ) {
+		if( typeof type !== 'string' ) {
 			return;
 		}
 
@@ -47,8 +47,8 @@ class Model {
 			if( type === i ) {
 				found = true;
 				let reducer = reducers[ i ];
-				// only track this
 				reducer( state );
+				// notify subscribers
 				this.notify();
 				break;
 			}
@@ -58,16 +58,17 @@ class Model {
 			for( let i in effects ) {
 				let effect = effects[ i ];
 				if( type === i ) {
-					var a = effect( { put }, ...params );
-					a.next();
-					a.next();
+					// TODO: yield
+					effect( { put }, ...params );
 				}
 			}
 		}
 	}
 	notify() {
-		// notify subscribers
-		this._subscribers.forEach(subscriber => subscriber());
+		const subscribers = this._subscribers;
+		for ( let i = 0, len = subscribers.length; i < len; i++ ) {
+			subscribers[ i ]();
+		}
 	}
 }
 

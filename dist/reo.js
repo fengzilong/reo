@@ -42,7 +42,7 @@ Model.prototype.put = function put ( type ) {
 		while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
 
 	// not valid action
-	if( typeof type === 'undefined' ) {
+	if( typeof type !== 'string' ) {
 		return;
 	}
 
@@ -57,8 +57,8 @@ Model.prototype.put = function put ( type ) {
 		if( type === i ) {
 			found = true;
 			var reducer = reducers[ i ];
-			// only track this
 			reducer( state );
+			// notify subscribers
 			this$1.notify();
 			break;
 		}
@@ -68,16 +68,17 @@ Model.prototype.put = function put ( type ) {
 		for( var i$1 in effects ) {
 			var effect = effects[ i$1 ];
 			if( type === i$1 ) {
-				var a = effect.apply( void 0, [ { put: put } ].concat( params ) );
-				a.next();
-				a.next();
+				// TODO: yield
+				effect.apply( void 0, [ { put: put } ].concat( params ) );
 			}
 		}
 	}
 };
 Model.prototype.notify = function notify () {
-	// notify subscribers
-	this._subscribers.forEach(function (subscriber) { return subscriber(); });
+	var subscribers = this._subscribers;
+	for ( var i = 0, len = subscribers.length; i < len; i++ ) {
+		subscribers[ i ]();
+	}
 };
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
