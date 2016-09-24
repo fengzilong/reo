@@ -4,7 +4,8 @@
   "description": "inspired by dva",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "onchange \"src\" -i -v -- npm run build",
+    "build": "bubleup ./src/index.js -d dist --format umd --name reo"
   },
   "repository": {
     "type": "git",
@@ -15,5 +16,12 @@
   "bugs": {
     "url": "https://github.com/fengzilong/reo/issues"
   },
-  "homepage": "https://github.com/fengzilong/reo#readme"
+  "homepage": "https://github.com/fengzilong/reo#readme",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "bubleup": "^0.4.3",
+    "onchange": "^3.0.2",
+    "regularjs": "^0.5.1"
+  }
 }

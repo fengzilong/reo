@@ -1,0 +1,55 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>demo</title>
+	</head>
+	<body>
+		<script type="text/javascript" src="../dist/reo.js"></script>
+		<script type="text/javascript">
+			const delay = timeout => new Promise(( resolve, reject ) => {
+				setTimeout( function() {
+					resolve();
+				}, timeout );
+			});
+
+			const app = reo();
+
+			const $counter = app.model( {
+				name: 'counter',
+				state: { count: 0 },
+				reducers: {
+					add( state ) {
+						state.count++;
+					},
+					minus( state ) {
+						state.count--;
+					}
+				},
+				effects: {
+					*asyncAdd( { put }, num = 1 ) {
+						yield delay( 1000 );
+						yield put( 'add' );
+					}
+				},
+			} );
+
+			const Counter = app.view( {
+				models: [ $counter ],
+				components: {},
+				props: {
+					c: function() {
+						return $counter.state.count;
+					}
+				},
+				render: `
+					{ c }
+					<button on-click="{ this.put( 'counter/add' ) }">+</button>
+					<button on-click="{ this.put( 'counter/minus' ) }">-</button>
+					<button on-click="{ this.put( 'counter/asyncAdd' ) }">async add</button>
+				`
+			} );
+
+			Counter.inject( document.body );
+		</script>
+	</body>
+</html>
