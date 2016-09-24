@@ -49,7 +49,7 @@ class View {
 			this._view.data[ i ] = fn();
 		}
 
-		// you should know that, data is sync updated, only the view is delayed, but its also render asap( use requestAnimateFrame, ), so the data flow won't be in a mess, data is always correct
+		// you should know that, data is sync updated, only the view is delayed, and view is also rendered asap( use requestAnimateFrame, ), so the data flow is still in order, and data is always newest and correct
 
 		// TODO: for every view, merge multiple updates into one
 		// just send update signal, and gather them in next frame
