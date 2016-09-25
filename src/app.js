@@ -1,10 +1,19 @@
+import Store from './store';
 import Model from './model';
 import View from './view';
+import logger from './plugins/logger';
 
 class App {
 	constructor() {
 		this._views = {};
-		this._models = {};
+		this._store = new Store();
+		this._plugins = [];
+
+		this.use( logger() );
+	}
+	use( plugin ) {
+		// to get the correct store.state, save plugin here, execute all plugins until app.start is called
+		this._plugins.push( plugin );
 	}
 	model( {
 		name,
@@ -17,26 +26,29 @@ class App {
 			throw new Error( 'model must have a name' );
 		}
 
-		// save
-		return this._models[ name ] =
-			new Model( { name, state, reducers, effects, subscriptions } );
+		const model = new Model( { name, state, reducers, effects, subscriptions } );
+
+		this._store.add( model );
+
+		return model;
 	}
 	view( {
 		models = [],
 		props = {},
 		render = () => {}
 	} = {} ) {
-		if( !this._allModels ) {
-			this._allModels = Object.keys( this._models ).map( v => this._models[ v ] );
-		}
-
-		return new View( { models: models || this._allModels, props, render } );
+		return new View( { store: this._store, models, props, render } );
 	}
 	router() {
 
 	}
 	start() {
-
+		const plugins = this._plugins;
+		const store = this._store;
+		for ( let i = 0, len = plugins.length; i < len; i++ ) {
+			const plugin = plugins[ i ];
+			plugin( store );
+		}
 	}
 }
 

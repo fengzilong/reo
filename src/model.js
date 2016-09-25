@@ -22,6 +22,12 @@ class Model {
 			}
 		} );
 	}
+	get name() {
+		return this._name;
+	}
+	set name( v ) {
+		throw new Error( 'cannot change model name directly' );
+	}
 	watch() {
 
 	}
@@ -35,7 +41,7 @@ class Model {
 		if( this._dispatching ) {
 			return;
 		}
-		
+
 		// invalid action
 		if( typeof type !== 'string' ) {
 			return;
@@ -56,7 +62,7 @@ class Model {
 				reducer( state );
 				this._dispatching = false;
 				// notify subscribers
-				this.notify();
+				this.notify( type, ...params );
 				break;
 			}
 		}
@@ -71,10 +77,10 @@ class Model {
 			}
 		}
 	}
-	notify() {
+	notify( type, ...params ) {
 		const subscribers = this._subscribers;
 		for ( let i = 0, len = subscribers.length; i < len; i++ ) {
-			subscribers[ i ]();
+			subscribers[ i ]( type, ...params );
 		}
 	}
 }

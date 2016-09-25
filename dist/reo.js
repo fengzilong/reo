@@ -4,6 +4,89 @@
 	(global.reo = factory());
 }(this, (function () { 'use strict';
 
+var ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
+
+var Store = function Store() {
+	this._models = {};
+	this._modelArray = [];
+	this._state = {};
+	this._subscribers = {};
+	this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
+};
+
+var prototypeAccessors = { state: {} };
+prototypeAccessors.state.get = function () {
+	return this._state;
+};
+prototypeAccessors.state.set = function ( v ) {
+	throw new Error( 'cannot replace state directly' );
+};
+Store.prototype.add = function add ( model ) {
+		var this$1 = this;
+
+	this._models[ model.name ] = model;
+	this._modelArray.push( model );
+	this._state[ model.name ] = model.state;
+
+	// auto subscribe model changes when added
+	model.subscribe( function ( action ) {
+			var params = [], len = arguments.length - 1;
+			while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
+
+		(ref = this$1).notify.apply( ref, [ model.name, action ].concat( params ) );
+			var ref;
+	} );
+};
+Store.prototype.get = function get ( name ) {
+	return this._models[ name ];
+};
+Store.prototype.dispatch = function dispatch ( name, key ) {
+		var params = [], len = arguments.length - 2;
+		while ( len-- > 0 ) params[ len ] = arguments[ len + 2 ];
+
+	var model = this._models[ name ];
+	if( model ) {
+		model.put.apply( model, [ key ].concat( params ) );
+	}
+};
+Store.prototype.notify = function notify ( name, action ) {
+		var this$1 = this;
+		var params = [], len$1 = arguments.length - 2;
+		while ( len$1-- > 0 ) params[ len$1 ] = arguments[ len$1 + 2 ];
+
+	var cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
+	var state = this._state;
+	for ( var i = 0, len = cbs.length; i < len; i++ ) {
+		var cb = cbs[ i ];
+		cb( {
+			type: action,
+			payload: params,
+			meta: {
+				namespace: name
+			}
+		}, this$1._state );
+	}
+};
+Store.prototype.subscribe = function subscribe ( fn, names ) {
+		var this$1 = this;
+
+	if ( !names ) {
+		this._subscribers[ ALWAYS_NOTIFY_KEY ].push( fn );
+		return;
+	}
+
+	for ( var i = 0, len = names.length; i < len; i++ ) {
+		var name = names[ i ];
+		this$1._subscribers[ name ] = this$1._subscribers[ name ] || [];
+		this$1._subscribers[ name ].push( fn );
+	}
+};
+Store.prototype.toArray = function toArray () {
+	return this._modelArray;
+};
+
+Object.defineProperties( Store.prototype, prototypeAccessors );
+
 var Model = function Model( ref ) {
 	if ( ref === void 0 ) ref = {};
 	var name = ref.name;
@@ -28,6 +111,14 @@ var Model = function Model( ref ) {
 		}
 	} );
 };
+
+var prototypeAccessors$1 = { name: {} };
+prototypeAccessors$1.name.get = function () {
+	return this._name;
+};
+prototypeAccessors$1.name.set = function ( v ) {
+	throw new Error( 'cannot change model name directly' );
+};
 Model.prototype.watch = function watch () {
 
 };
@@ -45,7 +136,7 @@ Model.prototype.put = function put ( type ) {
 	if( this._dispatching ) {
 		return;
 	}
-		
+
 	// invalid action
 	if( typeof type !== 'string' ) {
 		return;
@@ -66,7 +157,7 @@ Model.prototype.put = function put ( type ) {
 			reducer( state );
 			this$1._dispatching = false;
 			// notify subscribers
-			this$1.notify();
+			(ref = this$1).notify.apply( ref, [ type ].concat( params ) );
 			break;
 		}
 	}
@@ -80,13 +171,19 @@ Model.prototype.put = function put ( type ) {
 			}
 		}
 	}
+		var ref;
 };
-Model.prototype.notify = function notify () {
+Model.prototype.notify = function notify ( type ) {
+		var params = [], len$1 = arguments.length - 1;
+		while ( len$1-- > 0 ) params[ len$1 ] = arguments[ len$1 + 1 ];
+
 	var subscribers = this._subscribers;
 	for ( var i = 0, len = subscribers.length; i < len; i++ ) {
-		subscribers[ i ]();
+		subscribers[ i ].apply( subscribers, [ type ].concat( params ) );
 	}
 };
+
+Object.defineProperties( Model.prototype, prototypeAccessors$1 );
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -5410,7 +5507,7 @@ Regular.parse = function(str, options){
 });
 
 var View = function View( ref ) {
-	var this$1 = this;
+	var store = ref.store;
 	var models = ref.models; if ( models === void 0 ) models = [];
 	var props = ref.props; if ( props === void 0 ) props = {};
 	var render = ref.render; if ( render === void 0 ) render = '';
@@ -5428,25 +5525,14 @@ var View = function View( ref ) {
 			}
 
 			this.put = function( actionName ) {
-				var params = [], len$1 = arguments.length - 1;
-				while ( len$1-- > 0 ) params[ len$1 ] = arguments[ len$1 + 1 ];
+				var params = [], len = arguments.length - 1;
+				while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
 
 				if ( actionName === void 0 ) actionName = '';
-				console.log.apply( console, [ 'put', actionName ].concat( params ) );
-
-				// find model
 				var parts = actionName.split( '/' );
 				var namespace = parts[0];
 				var key = parts[1];
-
-				// TODO: gen modelMap in constrcutor, for performance
-				for ( var i = 0, len = models.length; i < len; i++ ) {
-					var model = models[ i ];
-					if ( model._name === namespace ) {
-						model.put.apply( model, [ key ].concat( params ) );
-						break;
-					}
-				}
+				store.dispatch.apply( store, [ namespace, key ].concat( params ) );
 			}
 		}
 	});
@@ -5454,10 +5540,7 @@ var View = function View( ref ) {
 	this._view = new Component();
 
 	// view will be updated when model changes
-	for ( var i = 0, len = models.length; i < len; i++ ) {
-		var model = models[ i ];
-		model.subscribe( this$1.update.bind( this$1 ) );
-	}
+	store.subscribe( this.update.bind( this ), models );
 };
 View.prototype.inject = function inject () {
 		var args = [], len = arguments.length;
@@ -5485,9 +5568,55 @@ View.prototype.update = function update () {
 	}, 0);
 };
 
+// Credits: fcomb/redux-logger
+
+function createLogger( ref ) {
+	if ( ref === void 0 ) ref = {};
+	var collapsed = ref.collapsed; if ( collapsed === void 0 ) collapsed = true;
+	var transformer = ref.transformer; if ( transformer === void 0 ) transformer = function (state) { return state; };
+	var actionTransformer = ref.actionTransformer; if ( actionTransformer === void 0 ) actionTransformer = function (action) { return action; };
+
+	return function (store) {
+		var prevState = JSON.parse( JSON.stringify( store.state ) );
+		store.subscribe( function ( action, state ) {
+			var nextState = JSON.parse( JSON.stringify( state ) );
+			var time = new Date();
+			var formattedTime = " @ " + (pad(time.getHours(), 2)) + ":" + (pad(time.getMinutes(), 2)) + ":" + (pad(time.getSeconds(), 2)) + "." + (pad(time.getMilliseconds(), 3));
+			var message = "action " + (action.meta.namespace) + "/" + (action.type) + formattedTime;
+
+			collapsed
+				? console.groupCollapsed( message )
+				: console.group( message );
+
+			console.log('%c prev model state', 'color: #9E9E9E; font-weight: bold', transformer( prevState[ action.meta.namespace ] ));
+			console.log('%c action', 'color: #03A9F4; font-weight: bold', actionTransformer( action ));
+			console.log('%c next model state', 'color: #4CAF50; font-weight: bold', transformer( nextState[ action.meta.namespace ] ));
+
+			console.groupEnd( message );
+
+			prevState = nextState;
+		} );
+	}
+}
+
+function repeat (str, times) {
+	return (new Array(times + 1)).join(str);
+}
+
+function pad (num, maxLength) {
+	return repeat('0', maxLength - num.toString().length) + num;
+}
+
 var App = function App() {
 	this._views = {};
-	this._models = {};
+	this._store = new Store();
+	this._plugins = [];
+
+	this.use( createLogger() );
+};
+App.prototype.use = function use ( plugin ) {
+	// to get the correct store.state, save plugin here, execute all plugins until app.start is called
+	this._plugins.push( plugin );
 };
 App.prototype.model = function model ( ref ) {
 		if ( ref === void 0 ) ref = {};
@@ -5501,28 +5630,30 @@ App.prototype.model = function model ( ref ) {
 		throw new Error( 'model must have a name' );
 	}
 
-	// save
-	return this._models[ name ] =
-		new Model( { name: name, state: state, reducers: reducers, effects: effects, subscriptions: subscriptions } );
+	var model = new Model( { name: name, state: state, reducers: reducers, effects: effects, subscriptions: subscriptions } );
+
+	this._store.add( model );
+
+	return model;
 };
 App.prototype.view = function view ( ref ) {
-		var this$1 = this;
 		if ( ref === void 0 ) ref = {};
 		var models = ref.models; if ( models === void 0 ) models = [];
 		var props = ref.props; if ( props === void 0 ) props = {};
 		var render = ref.render; if ( render === void 0 ) render = function () {};
 
-	if( !this._allModels ) {
-		this._allModels = Object.keys( this._models ).map( function (v) { return this$1._models[ v ]; } );
-	}
-
-	return new View( { models: models || this._allModels, props: props, render: render } );
+	return new View( { store: this._store, models: models, props: props, render: render } );
 };
 App.prototype.router = function router () {
 
 };
 App.prototype.start = function start () {
-
+	var plugins = this._plugins;
+	var store = this._store;
+	for ( var i = 0, len = plugins.length; i < len; i++ ) {
+		var plugin = plugins[ i ];
+		plugin( store );
+	}
 };
 
 var index = function() {

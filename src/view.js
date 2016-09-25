@@ -1,7 +1,7 @@
 import Regular from 'regularjs';
 
 class View {
-	constructor( { models = [], props = {}, render = '' } ) {
+	constructor( { store, models = [], props = {}, render = '' } ) {
 		this._props = props;
 
 		const Component = Regular.extend({
@@ -13,20 +13,9 @@ class View {
 				}
 
 				this.put = function( actionName = '', ...params ) {
-					console.log( 'put', actionName, ...params );
-
-					// find model
 					const parts = actionName.split( '/' );
 					const [ namespace, key ] = parts;
-
-					// TODO: gen modelMap in constrcutor, for performance
-					for ( let i = 0, len = models.length; i < len; i++ ) {
-						let model = models[ i ];
-						if ( model._name === namespace ) {
-							model.put( key, ...params );
-							break;
-						}
-					}
+					store.dispatch( namespace, key, ...params );
 				}
 			}
 		});
@@ -34,10 +23,7 @@ class View {
 		this._view = new Component();
 
 		// view will be updated when model changes
-		for ( let i = 0, len = models.length; i < len; i++ ) {
-			const model = models[ i ];
-			model.subscribe( this.update.bind( this ) );
-		}
+		store.subscribe( this.update.bind( this ), models );
 	}
 	inject( ...args ) {
 		this._view.$inject( ...args );
