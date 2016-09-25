@@ -8,6 +8,8 @@ inspired by dva
 ```js
 const app = reo();
 app.model( ... );
+app.actions( ... );
+app.getters( ... );
 app.view( ... );
 app.router( ... );
 app.start( '#app' );
