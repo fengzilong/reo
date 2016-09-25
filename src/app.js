@@ -26,7 +26,7 @@ class App {
 			throw new Error( 'model must have a name' );
 		}
 
-		const model = new Model( { name, state, reducers, effects, subscriptions } );
+		const model = new Model( { store: this._store, name, state, reducers, effects, subscriptions } );
 
 		this._store.add( model );
 

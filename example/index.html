@@ -8,21 +8,45 @@
 		<script type="text/javascript">
 			const app = reo();
 
+			app.model({
+				name: 'foo',
+				state: { food: 'rice' },
+				reducers: {
+					bar( state, payload ) {
+						state.food = payload;
+					}
+				},
+				effects: {
+					bar( { commit }, payload ) {
+						setTimeout(function () {
+							commit( 'bar', payload )
+						}, 1000);
+					}
+				}
+			})
+
 			app.model( {
 				name: 'counter',
 				state: { count: 0 },
 				reducers: {
-					add( state ) {
-						state.count++;
+					add( state, payload = 1 ) {
+						state.count = state.count + payload;
 					},
-					minus( state ) {
-						state.count--;
+					minus( state, payload = 1 ) {
+						state.count = state.count - payload;
 					}
 				},
 				effects: {
-					asyncAdd( { put }, num = 1 ) {
+					addSync( { commit, dispatch }, num ) {
+						dispatch( 'foo/bar', 'rice2' );
+						commit( 'add', num );
+					},
+					minusSync( { commit }, num ) {
+						commit( 'minus', num );
+					},
+					addAsync( { commit }, num ) {
 						setTimeout(function () {
-							put( 'add' );
+							commit( 'add', num );
 						}, 4000);
 					}
 				},
@@ -38,9 +62,9 @@
 				},
 				render: `
 					{ c }
-					<button on-click="{ this.put( 'counter/add' ) }">+</button>
-					<button on-click="{ this.put( 'counter/minus' ) }">-</button>
-					<button on-click="{ this.put( 'counter/asyncAdd' ) }">async add</button>
+					<button on-click="{ this.dispatch( 'counter/addSync' ) }">+</button>
+					<button on-click="{ this.dispatch( 'counter/minusSync' ) }">-</button>
+					<button on-click="{ this.dispatch( 'counter/addAsync', 9 ) }">async add</button>
 				`
 			} );
 

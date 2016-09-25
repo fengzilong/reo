@@ -19,28 +19,31 @@ class Store {
 		this._state[ name ] = model.state;
 
 		// auto subscribe model changes when added
-		model.subscribe( ( type, ...params ) => {
-			this.notify( name, type, ...params );
+		model.subscribe( ( type, payload ) => {
+			this.notify( name, type, payload );
 		} );
 	}
-	dispatch( type, ...params ) {
+	_callModel( fnName, type, payload ) {
 		const parts = type.split( '/' );
-		const [ name, key ] = parts;
+		const [ name, truetype ] = parts;
 
 		const model = this._models[ name ];
 		if( model ) {
-			model.put( key, ...params );
+			return model[ fnName ]( truetype, payload );
 		}
 	}
-	notify( name, type, ...params ) {
+	commit( type, payload ) {
+		return this._callModel( 'commit', type, payload );
+	}
+	dispatch( type, payload ) {
+		return this._callModel( 'dispatch', type, payload );
+	}
+	notify( name, type, payload ) {
 		const cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
 		const state = this._state;
 		for ( let i = 0, len = cbs.length; i < len; i++ ) {
 			const cb = cbs[ i ];
-			cb( {
-				type: `${name}/${type}`,
-				payload: params
-			}, this._state );
+			cb( { type: `${name}/${type}`, payload }, this._state );
 		}
 	}
 	subscribe( fn, names ) {
