@@ -8,42 +8,41 @@ class Store {
 		this._subscribers = {};
 		this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
 	}
-	get state() {
+	getState() {
 		return this._state;
 	}
-	set state( v ) {
-		throw new Error( 'cannot replace state directly' );
-	}
 	add( model ) {
-		this._models[ model.name ] = model;
+		const name = model.name;
+
+		this._models[ name ] = model;
 		this._modelArray.push( model );
-		this._state[ model.name ] = model.state;
+		this._state[ name ] = model.state;
 
 		// auto subscribe model changes when added
-		model.subscribe( ( action, ...params ) => {
-			this.notify( model.name, action, ...params );
+		model.subscribe( ( type, ...params ) => {
+			this.notify( name, type, ...params );
 		} );
 	}
 	get( name ) {
 		return this._models[ name ];
 	}
-	dispatch( name, key, ...params ) {
+	dispatch( type, ...params ) {
+		const parts = type.split( '/' );
+		const [ name, key ] = parts;
+
 		const model = this._models[ name ];
 		if( model ) {
 			model.put( key, ...params );
 		}
 	}
-	notify( name, action, ...params ) {
+	notify( name, type, ...params ) {
 		const cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
 		const state = this._state;
 		for ( let i = 0, len = cbs.length; i < len; i++ ) {
 			const cb = cbs[ i ];
 			cb( {
-				type: action,
-				payload: params,
-				meta: {
-					namespace: name
-				}
+				type: `${name}/${type}`,
+				payload: params
 			}, this._state );
 		}
 	}

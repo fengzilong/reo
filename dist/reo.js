@@ -13,43 +13,44 @@ var Store = function Store() {
 	this._subscribers = {};
 	this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
 };
-
-var prototypeAccessors = { state: {} };
-prototypeAccessors.state.get = function () {
+Store.prototype.getState = function getState () {
 	return this._state;
-};
-prototypeAccessors.state.set = function ( v ) {
-	throw new Error( 'cannot replace state directly' );
 };
 Store.prototype.add = function add ( model ) {
 		var this$1 = this;
 
-	this._models[ model.name ] = model;
+	var name = model.name;
+
+	this._models[ name ] = model;
 	this._modelArray.push( model );
-	this._state[ model.name ] = model.state;
+	this._state[ name ] = model.state;
 
 	// auto subscribe model changes when added
-	model.subscribe( function ( action ) {
+	model.subscribe( function ( type ) {
 			var params = [], len = arguments.length - 1;
 			while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
 
-		(ref = this$1).notify.apply( ref, [ model.name, action ].concat( params ) );
+		(ref = this$1).notify.apply( ref, [ name, type ].concat( params ) );
 			var ref;
 	} );
 };
 Store.prototype.get = function get ( name ) {
 	return this._models[ name ];
 };
-Store.prototype.dispatch = function dispatch ( name, key ) {
-		var params = [], len = arguments.length - 2;
-		while ( len-- > 0 ) params[ len ] = arguments[ len + 2 ];
+Store.prototype.dispatch = function dispatch ( type ) {
+		var params = [], len = arguments.length - 1;
+		while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
+
+	var parts = type.split( '/' );
+	var name = parts[0];
+		var key = parts[1];
 
 	var model = this._models[ name ];
 	if( model ) {
 		model.put.apply( model, [ key ].concat( params ) );
 	}
 };
-Store.prototype.notify = function notify ( name, action ) {
+Store.prototype.notify = function notify ( name, type ) {
 		var this$1 = this;
 		var params = [], len$1 = arguments.length - 2;
 		while ( len$1-- > 0 ) params[ len$1 ] = arguments[ len$1 + 2 ];
@@ -59,11 +60,8 @@ Store.prototype.notify = function notify ( name, action ) {
 	for ( var i = 0, len = cbs.length; i < len; i++ ) {
 		var cb = cbs[ i ];
 		cb( {
-			type: action,
-			payload: params,
-			meta: {
-				namespace: name
-			}
+			type: (name + "/" + type),
+			payload: params
 		}, this$1._state );
 	}
 };
@@ -84,8 +82,6 @@ Store.prototype.subscribe = function subscribe ( fn, names ) {
 Store.prototype.toArray = function toArray () {
 	return this._modelArray;
 };
-
-Object.defineProperties( Store.prototype, prototypeAccessors );
 
 var Model = function Model( ref ) {
 	if ( ref === void 0 ) ref = {};
@@ -112,11 +108,11 @@ var Model = function Model( ref ) {
 	} );
 };
 
-var prototypeAccessors$1 = { name: {} };
-prototypeAccessors$1.name.get = function () {
+var prototypeAccessors = { name: {} };
+prototypeAccessors.name.get = function () {
 	return this._name;
 };
-prototypeAccessors$1.name.set = function ( v ) {
+prototypeAccessors.name.set = function ( v ) {
 	throw new Error( 'cannot change model name directly' );
 };
 Model.prototype.watch = function watch () {
@@ -183,7 +179,7 @@ Model.prototype.notify = function notify ( type ) {
 	}
 };
 
-Object.defineProperties( Model.prototype, prototypeAccessors$1 );
+Object.defineProperties( Model.prototype, prototypeAccessors );
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -5512,6 +5508,7 @@ var View = function View( ref ) {
 	var props = ref.props; if ( props === void 0 ) props = {};
 	var render = ref.render; if ( render === void 0 ) render = '';
 
+	this._store = store;
 	this._props = props;
 
 	var Component = index$1.extend({
@@ -5519,20 +5516,18 @@ var View = function View( ref ) {
 		config: function config() {
 			var this$1 = this;
 
+			var state = store.getState();
 			for( var i in props ) {
 				var fn = props[ i ];
-				this$1.data[ i ] = fn();
+				this$1.data[ i ] = fn( state );
 			}
 
-			this.put = function( actionName ) {
+			this.put = function( type ) {
 				var params = [], len = arguments.length - 1;
 				while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
 
-				if ( actionName === void 0 ) actionName = '';
-				var parts = actionName.split( '/' );
-				var namespace = parts[0];
-				var key = parts[1];
-				store.dispatch.apply( store, [ namespace, key ].concat( params ) );
+				if ( type === void 0 ) type = '';
+				store.dispatch.apply( store, [ type ].concat( params ) );
 			}
 		}
 	});
@@ -5540,7 +5535,7 @@ var View = function View( ref ) {
 	this._view = new Component();
 
 	// view will be updated when model changes
-	store.subscribe( this.update.bind( this ), models );
+	store.subscribe( this.update.bind( this ), models.length > 0 ? models : void 0 );
 };
 View.prototype.inject = function inject () {
 		var args = [], len = arguments.length;
@@ -5552,13 +5547,14 @@ View.prototype.inject = function inject () {
 View.prototype.update = function update () {
 		var this$1 = this;
 
+	var state = this._store.getState();
 	var props = this._props;
 	for( var i in props ) {
 		var fn = props[ i ];
-		this$1._view.data[ i ] = fn();
+		this$1._view.data[ i ] = fn( state );
 	}
 
-	// you should know that, data is sync updated, only the view is delayed, and view is also rendered asap( use requestAnimateFrame, ), so the data flow is still in order, and data is always newest and correct
+	// you should know that, data is sync updated, only the view is delayed, and view is also rendered asap( use requestAnimationFrame, ), so the data flow is still in order, and data is always newest and correct
 
 	// TODO: for every view, merge multiple updates into one
 	// just send update signal, and gather them in next frame
@@ -5577,20 +5573,20 @@ function createLogger( ref ) {
 	var actionTransformer = ref.actionTransformer; if ( actionTransformer === void 0 ) actionTransformer = function (action) { return action; };
 
 	return function (store) {
-		var prevState = JSON.parse( JSON.stringify( store.state ) );
+		var prevState = JSON.parse( JSON.stringify( store.getState() ) );
 		store.subscribe( function ( action, state ) {
 			var nextState = JSON.parse( JSON.stringify( state ) );
 			var time = new Date();
 			var formattedTime = " @ " + (pad(time.getHours(), 2)) + ":" + (pad(time.getMinutes(), 2)) + ":" + (pad(time.getSeconds(), 2)) + "." + (pad(time.getMilliseconds(), 3));
-			var message = "action " + (action.meta.namespace) + "/" + (action.type) + formattedTime;
+			var message = "action " + (action.type) + formattedTime;
 
 			collapsed
 				? console.groupCollapsed( message )
 				: console.group( message );
 
-			console.log('%c prev model state', 'color: #9E9E9E; font-weight: bold', transformer( prevState[ action.meta.namespace ] ));
+			console.log('%c prev state', 'color: #9E9E9E; font-weight: bold', transformer( prevState ));
 			console.log('%c action', 'color: #03A9F4; font-weight: bold', actionTransformer( action ));
-			console.log('%c next model state', 'color: #4CAF50; font-weight: bold', transformer( nextState[ action.meta.namespace ] ));
+			console.log('%c next state', 'color: #4CAF50; font-weight: bold', transformer( nextState ));
 
 			console.groupEnd( message );
 
@@ -5615,7 +5611,7 @@ var App = function App() {
 	this.use( createLogger() );
 };
 App.prototype.use = function use ( plugin ) {
-	// to get the correct store.state, save plugin here, execute all plugins until app.start is called
+	// to get the correct store._state, execute all plugins until app.start is called
 	this._plugins.push( plugin );
 };
 App.prototype.model = function model ( ref ) {

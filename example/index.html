@@ -14,7 +14,7 @@
 
 			const app = reo();
 
-			const $counter = app.model( {
+			app.model( {
 				name: 'counter',
 				state: { count: 0 },
 				reducers: {
@@ -38,11 +38,11 @@
 			} );
 
 			const Counter = app.view( {
-				models: [ 'counter' ],
-				components: {},
+				// models: [ 'counter' ],
+				// components: {},
 				props: {
-					c: function() {
-						return $counter.state.count;
+					c: function( state ) {
+						return state.counter.count;
 					}
 				},
 				render: `

@@ -12,7 +12,7 @@ class App {
 		this.use( logger() );
 	}
 	use( plugin ) {
-		// to get the correct store.state, save plugin here, execute all plugins until app.start is called
+		// to get the correct store._state, execute all plugins until app.start is called
 		this._plugins.push( plugin );
 	}
 	model( {
