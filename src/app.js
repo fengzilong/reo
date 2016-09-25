@@ -5,7 +5,8 @@ import logger from './plugins/logger';
 
 class App {
 	constructor() {
-		this._views = {};
+		this._viewConfigs = [];
+		this._views = [];
 		this._store = new Store();
 		this._plugins = [];
 
@@ -34,20 +35,61 @@ class App {
 	}
 	view( {
 		models = [],
-		props = {},
-		render = () => {}
+		computed = {},
+		template = ''
 	} = {} ) {
-		return new View( { store: this._store, models, props, render } );
+		this._viewConfigs.push( { models, computed, template } );
+	}
+	actions( actions ) {
+		this._store.registerActions( actions );
+	}
+	getters( getters = {} ) {
+		if( this._getters ) {
+			throw new Error( 'getters can only be called one time' );
+		}
+		this._getters = getters;
 	}
 	router() {
 
 	}
-	start() {
+	start( selector ) {
 		const plugins = this._plugins;
 		const store = this._store;
-		for ( let i = 0, len = plugins.length; i < len; i++ ) {
+		const getters = this._getters;
+		const viewConfigs = this._viewConfigs;
+
+		let i, j, len;
+
+		// register plugins
+		for ( i = 0, len = plugins.length; i < len; i++ ) {
 			const plugin = plugins[ i ];
 			plugin( store );
+		}
+
+		// setup views, now getters are correct
+		for ( i = 0, len = viewConfigs.length; i < len; i++ ) {
+			let { models, computed, template } = viewConfigs[ i ];
+			for ( j in computed ) {
+				const key = computed[ j ];
+				const getter = this._getters[ key ];
+				if( getter ) {
+					computed[ j ] = getter;
+				} else {
+					computed.splice( j, 1 );
+				}
+			}
+			this._views.push(
+				new View( {
+					store,
+					models,
+					props: computed,
+					template
+				} )
+			);
+		}
+
+		for ( i = 0, len = this._views.length; i < len; i++ ) {
+			this._views[ i ].inject( document.querySelector( selector ), 'bottom' );
 		}
 	}
 }

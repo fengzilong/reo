@@ -4,6 +4,8 @@
 		<title>demo</title>
 	</head>
 	<body>
+		<div id="app"></div>
+
 		<script type="text/javascript" src="../dist/reo.js"></script>
 		<script type="text/javascript">
 			const app = reo();
@@ -14,13 +16,6 @@
 				reducers: {
 					bar( state, payload ) {
 						state.food = payload;
-					}
-				},
-				effects: {
-					bar( { commit }, payload ) {
-						setTimeout(function () {
-							commit( 'bar', payload )
-						}, 1000);
 					}
 				}
 			})
@@ -35,47 +30,50 @@
 					minus( state, payload = 1 ) {
 						state.count = state.count - payload;
 					}
-				},
-				// TODO: move effects into actions
-				effects: {
-					addSync( { commit, dispatch }, num ) {
-						dispatch( 'foo/bar', 'rice2' );
-						commit( 'add', num );
-					},
-					minusSync( { commit }, num ) {
-						commit( 'minus', num );
-					},
-					addAsync( { commit }, num ) {
-						setTimeout(function () {
-							commit( 'add', num );
-						}, 4000);
-					}
-				},
+				}
+			} );
+
+			app.getters( {
+				ccc: function( state ) {
+					return state.counter.count;
+				}
 			} );
 
 			app.actions( {
-
+				bar( { commit }, payload ) {
+					setTimeout(function () {
+						commit( 'foo/bar', payload )
+					}, 1000);
+				},
+				addSync( { commit, dispatch }, num ) {
+					dispatch( 'bar', 'rice2' );
+					commit( 'counter/add', num );
+				},
+				minusSync( { commit }, num ) {
+					commit( 'counter/minus', num );
+				},
+				addAsync( { commit }, num ) {
+					setTimeout(function () {
+						commit( 'counter/add', num );
+					}, 4000);
+				}
 			} );
 
 			const Counter = app.view( {
 				// models: [ 'counter' ],
 				// components: {},
-				props: {
-					c: function( state ) {
-						return state.counter.count;
-					}
+				computed: {
+					c: 'ccc'
 				},
-				render: `
+				template: `
 					{ c }
-					<button on-click="{ this.dispatch( 'counter/addSync' ) }">+</button>
-					<button on-click="{ this.dispatch( 'counter/minusSync' ) }">-</button>
-					<button on-click="{ this.dispatch( 'counter/addAsync', 9 ) }">async add</button>
+					<button on-click="{ this.dispatch( 'addSync' ) }">+</button>
+					<button on-click="{ this.dispatch( 'minusSync' ) }">-</button>
+					<button on-click="{ this.dispatch( 'addAsync', 9 ) }">async add</button>
 				`
 			} );
 
-			Counter.inject( document.body );
-
-			app.start();
+			app.start( '#app' );
 		</script>
 	</body>
 </html>

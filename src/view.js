@@ -1,12 +1,12 @@
 import Regular from 'regularjs';
 
 class View {
-	constructor( { store, models = [], props = {}, render = '' } ) {
+	constructor( { store, models = [], props = {}, template = '' } ) {
 		this._store = store;
 		this._props = props;
 
 		const Component = Regular.extend({
-			template: render,
+			template,
 			config() {
 				const state = store.getState();
 				for( let i in props ) {

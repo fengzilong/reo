@@ -23,20 +23,29 @@ class Store {
 			this.notify( name, type, payload );
 		} );
 	}
-	_callModel( fnName, type, payload ) {
+	registerActions( actions ) {
+		if( this._actions ) {
+			return console.error( 'actions already registered' );
+		}
+		this._actions = actions;
+	}
+	_commit( type, payload ) {
 		const parts = type.split( '/' );
 		const [ name, truetype ] = parts;
 
 		const model = this._models[ name ];
 		if( model ) {
-			return model[ fnName ]( truetype, payload );
+			return model.commit( truetype, payload );
 		}
 	}
-	commit( type, payload ) {
-		return this._callModel( 'commit', type, payload );
-	}
 	dispatch( type, payload ) {
-		return this._callModel( 'dispatch', type, payload );
+		if ( !this._actions[ type ] ) {
+			return console.error( `action "${ type }" is not found` );
+		}
+		return this._actions[ type ]( {
+			commit: this._commit.bind( this ),
+			dispatch: this.dispatch.bind( this )
+		}, payload );
 	}
 	notify( name, type, payload ) {
 		const cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );

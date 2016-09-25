@@ -30,21 +30,30 @@ Store.prototype.add = function add ( model ) {
 		this$1.notify( name, type, payload );
 	} );
 };
-Store.prototype._callModel = function _callModel ( fnName, type, payload ) {
+Store.prototype.registerActions = function registerActions ( actions ) {
+	if( this._actions ) {
+		return console.error( 'actions already registered' );
+	}
+	this._actions = actions;
+};
+Store.prototype._commit = function _commit ( type, payload ) {
 	var parts = type.split( '/' );
 	var name = parts[0];
 		var truetype = parts[1];
 
 	var model = this._models[ name ];
 	if( model ) {
-		return model[ fnName ]( truetype, payload );
+		return model.commit( truetype, payload );
 	}
 };
-Store.prototype.commit = function commit ( type, payload ) {
-	return this._callModel( 'commit', type, payload );
-};
 Store.prototype.dispatch = function dispatch ( type, payload ) {
-	return this._callModel( 'dispatch', type, payload );
+	if ( !this._actions[ type ] ) {
+		return console.error( ("action \"" + type + "\" is not found") );
+	}
+	return this._actions[ type ]( {
+		commit: this._commit.bind( this ),
+		dispatch: this.dispatch.bind( this )
+	}, payload );
 };
 Store.prototype.notify = function notify ( name, type, payload ) {
 		var this$1 = this;
@@ -137,41 +146,6 @@ Model.prototype.commit = function commit ( type, payload ) {
 			break;
 		}
 	}
-};
-Model.prototype.dispatch = function dispatch ( type, payload ) {
-		var this$1 = this;
-
-	// if dispatch other model, let store do the dispatch
-	if( ~type.indexOf( '/' ) ) {
-		return this._store.dispatch( type, payload );
-	}
-
-	// invalid action
-	if( typeof type !== 'string' ) {
-		return;
-	}
-
-	var effects = this._effects;
-	var state = this._state;
-	var commit = function ( type, payload ) {
-		if ( ~type.indexOf( '/' ) ) {
-			throw new Error( 'committing other model is not allowed, you should use dispatch instead' );
-		}
-		return this$1.commit( type, payload );
-	};
-	var dispatch = function ( type, payload ) {
-		return this$1.dispatch( type, payload );
-	};
-
-	var tmp;
-	for ( var i in effects ) {
-		var effect = effects[ i ];
-		if( type === i ) {
-			tmp = effect( { commit: commit, dispatch: dispatch }, payload );
-			break;
-		}
-	}
-	return tmp;
 };
 Model.prototype.notify = function notify ( type, payload ) {
 	var subscribers = this._subscribers;
@@ -5507,13 +5481,13 @@ var View = function View( ref ) {
 	var store = ref.store;
 	var models = ref.models; if ( models === void 0 ) models = [];
 	var props = ref.props; if ( props === void 0 ) props = {};
-	var render = ref.render; if ( render === void 0 ) render = '';
+	var template = ref.template; if ( template === void 0 ) template = '';
 
 	this._store = store;
 	this._props = props;
 
 	var Component = index$1.extend({
-		template: render,
+		template: template,
 		config: function config() {
 			var this$1 = this;
 
@@ -5599,7 +5573,8 @@ function pad (num, maxLength) {
 }
 
 var App = function App() {
-	this._views = {};
+	this._viewConfigs = [];
+	this._views = [];
 	this._store = new Store();
 	this._plugins = [];
 
@@ -5630,20 +5605,68 @@ App.prototype.model = function model ( ref ) {
 App.prototype.view = function view ( ref ) {
 		if ( ref === void 0 ) ref = {};
 		var models = ref.models; if ( models === void 0 ) models = [];
-		var props = ref.props; if ( props === void 0 ) props = {};
-		var render = ref.render; if ( render === void 0 ) render = function () {};
+		var computed = ref.computed; if ( computed === void 0 ) computed = {};
+		var template = ref.template; if ( template === void 0 ) template = '';
 
-	return new View( { store: this._store, models: models, props: props, render: render } );
+	this._viewConfigs.push( { models: models, computed: computed, template: template } );
+};
+App.prototype.actions = function actions ( actions ) {
+	this._store.registerActions( actions );
+};
+App.prototype.getters = function getters ( getters ) {
+		if ( getters === void 0 ) getters = {};
+
+	if( this._getters ) {
+		throw new Error( 'getters can only be called one time' );
+	}
+	this._getters = getters;
 };
 App.prototype.router = function router () {
 
 };
-App.prototype.start = function start () {
+App.prototype.start = function start ( selector ) {
+		var this$1 = this;
+
 	var plugins = this._plugins;
 	var store = this._store;
-	for ( var i = 0, len = plugins.length; i < len; i++ ) {
+	var getters = this._getters;
+	var viewConfigs = this._viewConfigs;
+
+	var i, j, len;
+
+	// register plugins
+	for ( i = 0, len = plugins.length; i < len; i++ ) {
 		var plugin = plugins[ i ];
 		plugin( store );
+	}
+
+	// setup views, now getters are correct
+	for ( i = 0, len = viewConfigs.length; i < len; i++ ) {
+		var ref = viewConfigs[ i ];
+			var models = ref.models;
+			var computed = ref.computed;
+			var template = ref.template;
+		for ( j in computed ) {
+			var key = computed[ j ];
+			var getter = this$1._getters[ key ];
+			if( getter ) {
+				computed[ j ] = getter;
+			} else {
+				computed.splice( j, 1 );
+			}
+		}
+		this$1._views.push(
+			new View( {
+				store: store,
+				models: models,
+				props: computed,
+				template: template
+			} )
+		);
+	}
+
+	for ( i = 0, len = this._views.length; i < len; i++ ) {
+		this$1._views[ i ].inject( document.querySelector( selector ), 'bottom' );
 	}
 };
 
