@@ -6,12 +6,6 @@
 	<body>
 		<script type="text/javascript" src="../dist/reo.js"></script>
 		<script type="text/javascript">
-			const delay = timeout => new Promise(( resolve, reject ) => {
-				setTimeout( function() {
-					resolve();
-				}, timeout );
-			});
-
 			const app = reo();
 
 			app.model( {
@@ -27,9 +21,6 @@
 				},
 				effects: {
 					asyncAdd( { put }, num = 1 ) {
-						// yield delay( 1000 );
-						// yield put( 'add' );
-
 						setTimeout(function () {
 							put( 'add' );
 						}, 4000);

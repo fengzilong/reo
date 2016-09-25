@@ -34,9 +34,6 @@ Store.prototype.add = function add ( model ) {
 			var ref;
 	} );
 };
-Store.prototype.get = function get ( name ) {
-	return this._models[ name ];
-};
 Store.prototype.dispatch = function dispatch ( type ) {
 		var params = [], len = arguments.length - 1;
 		while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];

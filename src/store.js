@@ -23,9 +23,6 @@ class Store {
 			this.notify( name, type, ...params );
 		} );
 	}
-	get( name ) {
-		return this._models[ name ];
-	}
 	dispatch( type, ...params ) {
 		const parts = type.split( '/' );
 		const [ name, key ] = parts;
