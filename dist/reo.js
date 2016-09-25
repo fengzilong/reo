@@ -16,6 +16,7 @@ var Model = function Model( ref ) {
 	this._reducers = reducers;
 	this._effects = effects;
 	this._subscribers = [];
+	this._dispatching = false;
 
 	// make state available outside
 	Object.defineProperty( this, 'state', {
@@ -41,7 +42,11 @@ Model.prototype.put = function put ( type ) {
 		var params = [], len = arguments.length - 1;
 		while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
 
-	// not valid action
+	if( this._dispatching ) {
+		return;
+	}
+		
+	// invalid action
 	if( typeof type !== 'string' ) {
 		return;
 	}
@@ -57,7 +62,9 @@ Model.prototype.put = function put ( type ) {
 		if( type === i ) {
 			found = true;
 			var reducer = reducers[ i ];
+			this$1._dispatching = true;
 			reducer( state );
+			this$1._dispatching = false;
 			// notify subscribers
 			this$1.notify();
 			break;

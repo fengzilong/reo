@@ -10,6 +10,7 @@ class Model {
 		this._reducers = reducers;
 		this._effects = effects;
 		this._subscribers = [];
+		this._dispatching = false;
 
 		// make state available outside
 		Object.defineProperty( this, 'state', {
@@ -31,7 +32,11 @@ class Model {
 		// type包含effects?
 	}
 	put( type, ...params ) {
-		// not valid action
+		if( this._dispatching ) {
+			return;
+		}
+		
+		// invalid action
 		if( typeof type !== 'string' ) {
 			return;
 		}
@@ -47,7 +52,9 @@ class Model {
 			if( type === i ) {
 				found = true;
 				let reducer = reducers[ i ];
+				this._dispatching = true;
 				reducer( state );
+				this._dispatching = false;
 				// notify subscribers
 				this.notify();
 				break;
