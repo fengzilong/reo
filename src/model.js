@@ -1,6 +1,7 @@
 class Model {
 	constructor( {
 		name,
+		store,
 		state = {},
 		reducers = {},
 		effects = {},
@@ -11,16 +12,14 @@ class Model {
 		this._effects = effects;
 		this._subscribers = [];
 		this._dispatching = false;
-
-		// make state available outside
-		Object.defineProperty( this, 'state', {
-			get() {
-				return state;
-			},
-			set() {
-				console.error( 'cannot replace state directly' );
-			}
-		} );
+		this._state = state;
+		this._store = store;
+	}
+	get state() {
+		return this._state;
+	}
+	set state( v ) {
+		throw new Error( 'cannot replace state directly' );
 	}
 	get name() {
 		return this._name;
@@ -34,10 +33,7 @@ class Model {
 	subscribe( fn ) {
 		this._subscribers.push( fn );
 	}
-	take( type ) {
-		// type包含effects?
-	}
-	put( type, ...params ) {
+	commit( type, payload ) {
 		if( this._dispatching ) {
 			return;
 		}
@@ -48,39 +44,57 @@ class Model {
 		}
 
 		const reducers = this._reducers;
-		const effects = this._effects;
-		const state = this.state;
-		const put = this.put.bind( this );
+		const state = this._state;
 
-		let found = false;
-
-		for( let i in reducers ) {
+		for ( let i in reducers ) {
 			if( type === i ) {
-				found = true;
 				let reducer = reducers[ i ];
 				this._dispatching = true;
-				reducer( state );
+				reducer( state, payload );
 				this._dispatching = false;
 				// notify subscribers
-				this.notify( type, ...params );
+				this.notify( type, payload );
 				break;
 			}
 		}
+	}
+	dispatch( type, payload ) {
+		// if dispatch other model, let store do the dispatch
+		if( ~type.indexOf( '/' ) ) {
+			return this._store.dispatch( type, payload );
+		}
 
-		if( !found ) {
-			for( let i in effects ) {
-				let effect = effects[ i ];
-				if( type === i ) {
-					// TODO: yield
-					effect( { put }, ...params );
-				}
+		// invalid action
+		if( typeof type !== 'string' ) {
+			return;
+		}
+
+		const effects = this._effects;
+		const state = this._state;
+		const commit = ( type, payload ) => {
+			if ( ~type.indexOf( '/' ) ) {
+				throw new Error( 'committing other model is not allowed, you should use dispatch instead' );
+			}
+			return this.commit( type, payload );
+		};
+		const dispatch = ( type, payload ) => {
+			return this.dispatch( type, payload );
+		};
+
+		let tmp;
+		for ( let i in effects ) {
+			let effect = effects[ i ];
+			if( type === i ) {
+				tmp = effect( { commit, dispatch }, payload );
+				break;
 			}
 		}
+		return tmp;
 	}
-	notify( type, ...params ) {
+	notify( type, payload ) {
 		const subscribers = this._subscribers;
 		for ( let i = 0, len = subscribers.length; i < len; i++ ) {
-			subscribers[ i ]( type, ...params );
+			subscribers[ i ]( type, payload );
 		}
 	}
 }

@@ -26,40 +26,34 @@ Store.prototype.add = function add ( model ) {
 	this._state[ name ] = model.state;
 
 	// auto subscribe model changes when added
-	model.subscribe( function ( type ) {
-			var params = [], len = arguments.length - 1;
-			while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
-
-		(ref = this$1).notify.apply( ref, [ name, type ].concat( params ) );
-			var ref;
+	model.subscribe( function ( type, payload ) {
+		this$1.notify( name, type, payload );
 	} );
 };
-Store.prototype.dispatch = function dispatch ( type ) {
-		var params = [], len = arguments.length - 1;
-		while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
-
+Store.prototype._callModel = function _callModel ( fnName, type, payload ) {
 	var parts = type.split( '/' );
 	var name = parts[0];
-		var key = parts[1];
+		var truetype = parts[1];
 
 	var model = this._models[ name ];
 	if( model ) {
-		model.put.apply( model, [ key ].concat( params ) );
+		return model[ fnName ]( truetype, payload );
 	}
 };
-Store.prototype.notify = function notify ( name, type ) {
+Store.prototype.commit = function commit ( type, payload ) {
+	return this._callModel( 'commit', type, payload );
+};
+Store.prototype.dispatch = function dispatch ( type, payload ) {
+	return this._callModel( 'dispatch', type, payload );
+};
+Store.prototype.notify = function notify ( name, type, payload ) {
 		var this$1 = this;
-		var params = [], len$1 = arguments.length - 2;
-		while ( len$1-- > 0 ) params[ len$1 ] = arguments[ len$1 + 2 ];
 
 	var cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
 	var state = this._state;
 	for ( var i = 0, len = cbs.length; i < len; i++ ) {
 		var cb = cbs[ i ];
-		cb( {
-			type: (name + "/" + type),
-			payload: params
-		}, this$1._state );
+		cb( { type: (name + "/" + type), payload: payload }, this$1._state );
 	}
 };
 Store.prototype.subscribe = function subscribe ( fn, names ) {
@@ -83,6 +77,7 @@ Store.prototype.toArray = function toArray () {
 var Model = function Model( ref ) {
 	if ( ref === void 0 ) ref = {};
 	var name = ref.name;
+	var store = ref.store;
 	var state = ref.state; if ( state === void 0 ) state = {};
 	var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
 	var effects = ref.effects; if ( effects === void 0 ) effects = {};
@@ -93,19 +88,17 @@ var Model = function Model( ref ) {
 	this._effects = effects;
 	this._subscribers = [];
 	this._dispatching = false;
-
-	// make state available outside
-	Object.defineProperty( this, 'state', {
-		get: function get() {
-			return state;
-		},
-		set: function set() {
-			console.error( 'cannot replace state directly' );
-		}
-	} );
+	this._state = state;
+	this._store = store;
 };
 
-var prototypeAccessors = { name: {} };
+var prototypeAccessors = { state: {},name: {} };
+prototypeAccessors.state.get = function () {
+	return this._state;
+};
+prototypeAccessors.state.set = function ( v ) {
+	throw new Error( 'cannot replace state directly' );
+};
 prototypeAccessors.name.get = function () {
 	return this._name;
 };
@@ -118,13 +111,8 @@ Model.prototype.watch = function watch () {
 Model.prototype.subscribe = function subscribe ( fn ) {
 	this._subscribers.push( fn );
 };
-Model.prototype.take = function take ( type ) {
-	// type包含effects?
-};
-Model.prototype.put = function put ( type ) {
+Model.prototype.commit = function commit ( type, payload ) {
 		var this$1 = this;
-		var params = [], len = arguments.length - 1;
-		while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
 
 	if( this._dispatching ) {
 		return;
@@ -136,43 +124,59 @@ Model.prototype.put = function put ( type ) {
 	}
 
 	var reducers = this._reducers;
-	var effects = this._effects;
-	var state = this.state;
-	var put = this.put.bind( this );
+	var state = this._state;
 
-	var found = false;
-
-	for( var i in reducers ) {
+	for ( var i in reducers ) {
 		if( type === i ) {
-			found = true;
 			var reducer = reducers[ i ];
 			this$1._dispatching = true;
-			reducer( state );
+			reducer( state, payload );
 			this$1._dispatching = false;
 			// notify subscribers
-			(ref = this$1).notify.apply( ref, [ type ].concat( params ) );
+			this$1.notify( type, payload );
 			break;
 		}
 	}
+};
+Model.prototype.dispatch = function dispatch ( type, payload ) {
+		var this$1 = this;
 
-	if( !found ) {
-		for( var i$1 in effects ) {
-			var effect = effects[ i$1 ];
-			if( type === i$1 ) {
-				// TODO: yield
-				effect.apply( void 0, [ { put: put } ].concat( params ) );
-			}
+	// if dispatch other model, let store do the dispatch
+	if( ~type.indexOf( '/' ) ) {
+		return this._store.dispatch( type, payload );
+	}
+
+	// invalid action
+	if( typeof type !== 'string' ) {
+		return;
+	}
+
+	var effects = this._effects;
+	var state = this._state;
+	var commit = function ( type, payload ) {
+		if ( ~type.indexOf( '/' ) ) {
+			throw new Error( 'committing other model is not allowed, you should use dispatch instead' );
+		}
+		return this$1.commit( type, payload );
+	};
+	var dispatch = function ( type, payload ) {
+		return this$1.dispatch( type, payload );
+	};
+
+	var tmp;
+	for ( var i in effects ) {
+		var effect = effects[ i ];
+		if( type === i ) {
+			tmp = effect( { commit: commit, dispatch: dispatch }, payload );
+			break;
 		}
 	}
-		var ref;
+	return tmp;
 };
-Model.prototype.notify = function notify ( type ) {
-		var params = [], len$1 = arguments.length - 1;
-		while ( len$1-- > 0 ) params[ len$1 ] = arguments[ len$1 + 1 ];
-
+Model.prototype.notify = function notify ( type, payload ) {
 	var subscribers = this._subscribers;
 	for ( var i = 0, len = subscribers.length; i < len; i++ ) {
-		subscribers[ i ].apply( subscribers, [ type ].concat( params ) );
+		subscribers[ i ]( type, payload );
 	}
 };
 
@@ -5519,13 +5523,7 @@ var View = function View( ref ) {
 				this$1.data[ i ] = fn( state );
 			}
 
-			this.put = function( type ) {
-				var params = [], len = arguments.length - 1;
-				while ( len-- > 0 ) params[ len ] = arguments[ len + 1 ];
-
-				if ( type === void 0 ) type = '';
-				store.dispatch.apply( store, [ type ].concat( params ) );
-			}
+			this.dispatch = function ( type, payload ) { return store.dispatch( type, payload ); };
 		}
 	});
 
@@ -5575,7 +5573,7 @@ function createLogger( ref ) {
 			var nextState = JSON.parse( JSON.stringify( state ) );
 			var time = new Date();
 			var formattedTime = " @ " + (pad(time.getHours(), 2)) + ":" + (pad(time.getMinutes(), 2)) + ":" + (pad(time.getSeconds(), 2)) + "." + (pad(time.getMilliseconds(), 3));
-			var message = "action " + (action.type) + formattedTime;
+			var message = "commit " + (action.type) + formattedTime;
 
 			collapsed
 				? console.groupCollapsed( message )
@@ -5623,7 +5621,7 @@ App.prototype.model = function model ( ref ) {
 		throw new Error( 'model must have a name' );
 	}
 
-	var model = new Model( { name: name, state: state, reducers: reducers, effects: effects, subscriptions: subscriptions } );
+	var model = new Model( { store: this._store, name: name, state: state, reducers: reducers, effects: effects, subscriptions: subscriptions } );
 
 	this._store.add( model );
 

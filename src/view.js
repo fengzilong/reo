@@ -14,9 +14,7 @@ class View {
 					this.data[ i ] = fn( state );
 				}
 
-				this.put = function( type = '', ...params ) {
-					store.dispatch( type, ...params );
-				}
+				this.dispatch = ( type, payload ) => store.dispatch( type, payload );
 			}
 		});
 

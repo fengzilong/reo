@@ -11,7 +11,7 @@ function createLogger( {
 			const nextState = JSON.parse( JSON.stringify( state ) );
 			const time = new Date();
 			const formattedTime = ` @ ${pad(time.getHours(), 2)}:${pad(time.getMinutes(), 2)}:${pad(time.getSeconds(), 2)}.${pad(time.getMilliseconds(), 3)}`;
-			const message = `action ${ action.type }${ formattedTime }`;
+			const message = `commit ${ action.type }${ formattedTime }`;
 
 			collapsed
 				? console.groupCollapsed( message )
