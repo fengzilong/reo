@@ -1,7 +1,6 @@
 import Store from './store';
 import Model from './model';
 import View from './view';
-import logger from './plugins/logger';
 
 class App {
 	constructor() {
@@ -9,8 +8,6 @@ class App {
 		this._views = [];
 		this._store = new Store();
 		this._plugins = [];
-
-		this.use( logger() );
 	}
 	use( plugin ) {
 		// to get the correct store._state, execute all plugins until app.start is called

@@ -7,8 +7,11 @@
 		<div id="app"></div>
 
 		<script type="text/javascript" src="../dist/reo.js"></script>
+		<script type="text/javascript" src="../logger.js"></script>
 		<script type="text/javascript">
 			const app = reo();
+
+			app.use( logger() );
 
 			app.model({
 				name: 'foo',

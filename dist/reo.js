@@ -5551,52 +5551,11 @@ View.prototype.update = function update () {
 	}, 0);
 };
 
-// Credits: fcomb/redux-logger
-
-function createLogger( ref ) {
-	if ( ref === void 0 ) ref = {};
-	var collapsed = ref.collapsed; if ( collapsed === void 0 ) collapsed = true;
-	var transformer = ref.transformer; if ( transformer === void 0 ) transformer = function (state) { return state; };
-	var actionTransformer = ref.actionTransformer; if ( actionTransformer === void 0 ) actionTransformer = function (action) { return action; };
-
-	return function (store) {
-		var prevState = JSON.parse( JSON.stringify( store.getState() ) );
-		store.subscribe( function ( action, state ) {
-			var nextState = JSON.parse( JSON.stringify( state ) );
-			var time = new Date();
-			var formattedTime = " @ " + (pad(time.getHours(), 2)) + ":" + (pad(time.getMinutes(), 2)) + ":" + (pad(time.getSeconds(), 2)) + "." + (pad(time.getMilliseconds(), 3));
-			var message = "commit " + (action.type) + formattedTime;
-
-			collapsed
-				? console.groupCollapsed( message )
-				: console.group( message );
-
-			console.log('%c prev state', 'color: #9E9E9E; font-weight: bold', transformer( prevState ));
-			console.log('%c action', 'color: #03A9F4; font-weight: bold', actionTransformer( action ));
-			console.log('%c next state', 'color: #4CAF50; font-weight: bold', transformer( nextState ));
-
-			console.groupEnd( message );
-
-			prevState = nextState;
-		} );
-	}
-}
-
-function repeat (str, times) {
-	return (new Array(times + 1)).join(str);
-}
-
-function pad (num, maxLength) {
-	return repeat('0', maxLength - num.toString().length) + num;
-}
-
 var App = function App() {
 	this._viewConfigs = [];
 	this._views = [];
 	this._store = new Store();
 	this._plugins = [];
-
-	this.use( createLogger() );
 };
 App.prototype.use = function use ( plugin ) {
 	// to get the correct store._state, execute all plugins until app.start is called
@@ -5620,7 +5579,7 @@ App.prototype.model = function model ( ref ) {
 };
 App.prototype.view = function view ( options ) {
 	this._viewConfigs.push( options );
-	// TODO: return id, used in components later to find registered Component
+	// TODO: return Component Constructor, used in components later to find registered Component
 };
 App.prototype.actions = function actions ( actions ) {
 	this._store.registerActions( actions );

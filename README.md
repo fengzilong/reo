@@ -1,18 +1,18 @@
 # reo <sup>wip</sup>
 
-inspired by dva
-
+inspired by [dva](https://github.com/dvajs/dva) and [vuex](https://github.com/vuejs/vuex)
 
 ## Overview
 
 ```js
-const app = reo();
-app.model( ... );
-app.actions( ... );
-app.getters( ... );
-app.view( ... );
-app.router( ... );
-app.start( '#app' );
+const app = reo()
+app.use( plugin )
+app.model( ... )
+app.actions( ... )
+app.getters( ... )
+app.view( ... )
+app.router( ... )
+app.start( '#app' )
 ```
 
 ## License
