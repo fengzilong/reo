@@ -3,13 +3,10 @@ class Model {
 		name,
 		store,
 		state = {},
-		reducers = {},
-		effects = {},
-		subscriptions = {}
+		reducers = {}
 	} = {} ) {
 		this._name = name;
 		this._reducers = reducers;
-		this._effects = effects;
 		this._subscribers = [];
 		this._dispatching = false;
 		this._state = state;

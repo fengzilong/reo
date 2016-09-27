@@ -89,12 +89,9 @@ var Model = function Model( ref ) {
 	var store = ref.store;
 	var state = ref.state; if ( state === void 0 ) state = {};
 	var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
-	var effects = ref.effects; if ( effects === void 0 ) effects = {};
-	var subscriptions = ref.subscriptions; if ( subscriptions === void 0 ) subscriptions = {};
 
 	this._name = name;
 	this._reducers = reducers;
-	this._effects = effects;
 	this._subscribers = [];
 	this._dispatching = false;
 	this._state = state;
@@ -986,14 +983,14 @@ var env = {
 	isRunning: isRunning
 };
 
-var config$1 = {
+var config = {
   'BEGIN': '{',
   'END': '}',
   'PRECOMPILE': false
 }
 
 var _$2 = util;
-var config$4 = config$1;
+var config$3 = config;
 
 // some custom tag  will conflict with the Lexer progress
 var conflictTag = {"}": "{", "]": "["};
@@ -1019,9 +1016,9 @@ function wrapHander(handler){
 }
 
 function Lexer$1(input, opts){
-  if(conflictTag[config$4.END]){
-    this.markStart = conflictTag[config$4.END];
-    this.markEnd = config$4.END;
+  if(conflictTag[config$3.END]){
+    this.markStart = conflictTag[config$3.END];
+    this.markEnd = config$3.END;
   }
 
   this.input = (input||"").trim();
@@ -1121,8 +1118,8 @@ lo.leave = function(state){
 
 
 Lexer$1.setup = function(){
-  macro.END = config$4.END;
-  macro.BEGIN = config$4.BEGIN;
+  macro.END = config$3.END;
+  macro.BEGIN = config$3.BEGIN;
   //
   map1 = genMap([
     // INIT
@@ -1409,7 +1406,7 @@ var node$1 = {
 
 var _$3 = util;
 
-var config$5 = config$1;
+var config$4 = config;
 var node = node$1;
 var Lexer$2 = Lexer_1;
 var varName = _$3.varName;
@@ -1612,7 +1609,7 @@ op.attvalue = function(mdf){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf(config$5.BEGIN) && ~value.indexOf(config$5.END) && mdf!=='cmpl'){
+      if(~value.indexOf(config$4.BEGIN) && ~value.indexOf(config$4.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser$1(value, { mode: 2 }).parse();
         if(parsed.length === 1 && parsed[0].type === 'expression') { return parsed[0]; }
@@ -4221,7 +4218,7 @@ f.total = function(array, key){
 var env$2 = env;
 var Lexer = Lexer_1;
 var Parser = Parser_1;
-var config$3 = config$1;
+var config$2 = config;
 var _$1 = util;
 var extend$1 = extend$2;
 var combine = {};
@@ -4360,7 +4357,7 @@ _$1.extend(Regular$1, {
       } 
 
       if(typeof template === 'string' ){
-        this.prototype.template = config$3.PRECOMPILE? new Parser(template).parse(): template;
+        this.prototype.template = config$2.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 
@@ -4426,7 +4423,7 @@ _$1.extend(Regular$1, {
       for(var i in name){
         // if you config
         if( i ==="END" || i==='BEGIN' )  { needGenLexer = true; }
-        config$3[i] = name[i];
+        config$2[i] = name[i];
       }
     }
     if(needGenLexer) { Lexer.setup(); }
@@ -5451,7 +5448,7 @@ Regular$5.plugin('$timeout', TimeoutModule);
 
 var index$1 = createCommonjsModule(function (module) {
 var env$$1 =  env;
-var config = config$1; 
+var config$$1 = config; 
 var Regular = module.exports = Regular_1;
 var Parser = Regular.Parser;
 var Lexer = Regular.Lexer;
@@ -5468,8 +5465,8 @@ Regular.parse = function(str, options){
   options = options || {};
 
   if(options.BEGIN || options.END){
-    if(options.BEGIN) { config.BEGIN = options.BEGIN; }
-    if(options.END) { config.END = options.END; }
+    if(options.BEGIN) { config$$1.BEGIN = options.BEGIN; }
+    if(options.END) { config$$1.END = options.END; }
     Lexer.setup();
   }
   var ast = new Parser(str).parse();
@@ -5477,32 +5474,53 @@ Regular.parse = function(str, options){
 }
 });
 
-var View = function View( ref ) {
-	var store = ref.store;
-	var models = ref.models; if ( models === void 0 ) models = [];
-	var props = ref.props; if ( props === void 0 ) props = {};
-	var template = ref.template; if ( template === void 0 ) template = '';
+var View = function View( options ) {
+	var store = options.store;
+	var models = options.models;
+	var components = options.components;
+	var props = options.props;
+	var config = options.config;
+
+	delete options.store;
+	delete options.models;
+	delete options.props;
+	delete options.config;
+	delete options.components;
+
+	models = models || [];
+	props = props || {};
+	config = config || function() {};
 
 	this._store = store;
 	this._props = props;
 
-	var Component = index$1.extend({
-		template: template,
-		config: function config() {
-			var this$1 = this;
+	var Component = index$1.extend( Object.assign(
+		options,
+		{
+			config: function config$1( data ) {
+				var this$1 = this;
 
-			var state = store.getState();
-			for( var i in props ) {
-				var fn = props[ i ];
-				this$1.data[ i ] = fn( state );
+				var state = store.getState();
+				for( var i in props ) {
+					var fn = props[ i ];
+					this$1.data[ i ] = fn( state );
+				}
+
+				this.dispatch = function ( type, payload ) { return store.dispatch( type, payload ); };
+
+				config.call( this, data );
 			}
-
-			this.dispatch = function ( type, payload ) { return store.dispatch( type, payload ); };
 		}
-	});
+	) );
 
+	for ( var i in components ) {
+		Component.component( i, components[ i ] );
+	}
+
+	// TODO: 返回Component，在start时再生成实例
 	this._view = new Component();
 
+	// TODO: $init events中订阅store，$destroy中销毁订阅
 	// view will be updated when model changes
 	store.subscribe( this.update.bind( this ), models.length > 0 ? models : void 0 );
 };
@@ -5589,26 +5607,20 @@ App.prototype.model = function model ( ref ) {
 		var name = ref.name;
 		var state = ref.state; if ( state === void 0 ) state = {};
 		var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
-		var effects = ref.effects; if ( effects === void 0 ) effects = {};
-		var subscriptions = ref.subscriptions; if ( subscriptions === void 0 ) subscriptions = {};
 
 	if( !name ) {
 		throw new Error( 'model must have a name' );
 	}
 
-	var model = new Model( { store: this._store, name: name, state: state, reducers: reducers, effects: effects, subscriptions: subscriptions } );
+	var model = new Model( { store: this._store, name: name, state: state, reducers: reducers } );
 
 	this._store.add( model );
 
 	return model;
 };
-App.prototype.view = function view ( ref ) {
-		if ( ref === void 0 ) ref = {};
-		var models = ref.models; if ( models === void 0 ) models = [];
-		var computed = ref.computed; if ( computed === void 0 ) computed = {};
-		var template = ref.template; if ( template === void 0 ) template = '';
-
-	this._viewConfigs.push( { models: models, computed: computed, template: template } );
+App.prototype.view = function view ( options ) {
+	this._viewConfigs.push( options );
+	// TODO: return id, used in components later to find registered Component
 };
 App.prototype.actions = function actions ( actions ) {
 	this._store.registerActions( actions );
@@ -5640,28 +5652,38 @@ App.prototype.start = function start ( selector ) {
 		plugin( store );
 	}
 
-	// setup views, now getters are correct
+	// setup views, now getters are newest
+	var props = {};
+	var computedProps = {};
 	for ( i = 0, len = viewConfigs.length; i < len; i++ ) {
-		var ref = viewConfigs[ i ];
-			var models = ref.models;
-			var computed = ref.computed;
-			var template = ref.template;
+		var config = viewConfigs[ i ];
+		var models = config.models;
+			var computed = config.computed;
+			var template = config.template;
+
+		computed = computed || {};
+
 		for ( j in computed ) {
 			var key = computed[ j ];
 			var getter = this$1._getters[ key ];
-			if( getter ) {
-				computed[ j ] = getter;
+			if ( typeof key === 'string' && getter ) {
+				props[ j ] = getter;
 			} else {
-				computed.splice( j, 1 );
+				computedProps[ j ] = key;
 			}
 		}
+
 		this$1._views.push(
-			new View( {
-				store: store,
-				models: models,
-				props: computed,
-				template: template
-			} )
+			new View( Object.assign(
+				config,
+				{
+					store: store,
+					models: models,
+					props: props,
+					computed: computedProps,
+					template: template
+				}
+			) )
 		);
 	}
 

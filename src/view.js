@@ -1,25 +1,47 @@
 import Regular from 'regularjs';
 
 class View {
-	constructor( { store, models = [], props = {}, template = '' } ) {
+	constructor( options ) {
+		let { store, models, components, props, config } = options;
+
+		delete options.store;
+		delete options.models;
+		delete options.props;
+		delete options.config;
+		delete options.components;
+
+		models = models || [];
+		props = props || {};
+		config = config || function() {};
+
 		this._store = store;
 		this._props = props;
 
-		const Component = Regular.extend({
-			template,
-			config() {
-				const state = store.getState();
-				for( let i in props ) {
-					const fn = props[ i ];
-					this.data[ i ] = fn( state );
+		const Component = Regular.extend( Object.assign(
+			options,
+			{
+				config( data ) {
+					const state = store.getState();
+					for( let i in props ) {
+						const fn = props[ i ];
+						this.data[ i ] = fn( state );
+					}
+
+					this.dispatch = ( type, payload ) => store.dispatch( type, payload );
+
+					config.call( this, data );
 				}
-
-				this.dispatch = ( type, payload ) => store.dispatch( type, payload );
 			}
-		});
+		) );
 
+		for ( let i in components ) {
+			Component.component( i, components[ i ] );
+		}
+
+		// TODO: 返回Component，在start时再生成实例
 		this._view = new Component();
 
+		// TODO: $init events中订阅store，$destroy中销毁订阅
 		// view will be updated when model changes
 		store.subscribe( this.update.bind( this ), models.length > 0 ? models : void 0 );
 	}

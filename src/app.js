@@ -19,26 +19,21 @@ class App {
 	model( {
 		name,
 		state = {},
-		reducers = {},
-		effects = {},
-		subscriptions = {}
+		reducers = {}
 	} = {} ) {
 		if( !name ) {
 			throw new Error( 'model must have a name' );
 		}
 
-		const model = new Model( { store: this._store, name, state, reducers, effects, subscriptions } );
+		const model = new Model( { store: this._store, name, state, reducers } );
 
 		this._store.add( model );
 
 		return model;
 	}
-	view( {
-		models = [],
-		computed = {},
-		template = ''
-	} = {} ) {
-		this._viewConfigs.push( { models, computed, template } );
+	view( options ) {
+		this._viewConfigs.push( options );
+		// TODO: return Component Constructor, used in components later to find registered Component
 	}
 	actions( actions ) {
 		this._store.registerActions( actions );
@@ -66,25 +61,36 @@ class App {
 			plugin( store );
 		}
 
-		// setup views, now getters are correct
+		// setup views, now getters are newest
+		let props = {};
+		let computedProps = {};
 		for ( i = 0, len = viewConfigs.length; i < len; i++ ) {
-			let { models, computed, template } = viewConfigs[ i ];
+			let config = viewConfigs[ i ];
+			let { models, computed, template } = config;
+
+			computed = computed || {};
+
 			for ( j in computed ) {
 				const key = computed[ j ];
 				const getter = this._getters[ key ];
-				if( getter ) {
-					computed[ j ] = getter;
+				if ( typeof key === 'string' && getter ) {
+					props[ j ] = getter;
 				} else {
-					computed.splice( j, 1 );
+					computedProps[ j ] = key;
 				}
 			}
+
 			this._views.push(
-				new View( {
-					store,
-					models,
-					props: computed,
-					template
-				} )
+				new View( Object.assign(
+					config,
+					{
+						store,
+						models,
+						props,
+						computed: computedProps,
+						template
+					}
+				) )
 			);
 		}
 

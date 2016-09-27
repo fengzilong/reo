@@ -34,15 +34,13 @@
 			} );
 
 			app.getters( {
-				ccc: function( state ) {
-					return state.counter.count;
-				}
+				ccc: ( { counter } ) => counter.count
 			} );
 
 			app.actions( {
 				bar( { commit }, payload ) {
 					setTimeout(function () {
-						commit( 'foo/bar', payload )
+						commit( 'foo/bar', payload );
 					}, 1000);
 				},
 				addSync( { commit, dispatch }, num ) {
@@ -60,18 +58,41 @@
 			} );
 
 			app.view( {
+				name: 'Btn',
+				template: `
+					<button on-click="{ this.onClick() }">{#inc this.$body}</button>
+				`,
+				onClick() {
+					console.log( 'clicked' );
+				}
+			} );
+
+			app.view( {
 				// models: [ 'counter' ],
 				// components: {},
+				config() {
+					this.data.localState = 1;
+				},
 				computed: {
 					c: 'ccc'
 				},
 				template: `
+					<Btn>xxx</Btn>
+					<button on-click="{ localState = localState + 1 }">
+						{ localState }
+					</button>
+					<br />
 					{ c }
 					<button on-click="{ this.dispatch( 'addSync' ) }">+</button>
 					<button on-click="{ this.dispatch( 'minusSync' ) }">-</button>
 					<button on-click="{ this.dispatch( 'addAsync', 9 ) }">async add</button>
 				`
 			} );
+
+			// app.router([
+			// 	{ path: '/', component: Home, beforeEnter: function() {}, children: [] },
+			// 	{ path: '/settings', component: Settings, children: [] },
+			// ]);
 
 			app.start( '#app' );
 		</script>
