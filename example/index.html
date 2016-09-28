@@ -92,10 +92,20 @@
 				`
 			} );
 
-			// app.router([
-			// 	{ path: '/', component: Home, beforeEnter: function() {}, children: [] },
-			// 	{ path: '/settings', component: Settings, children: [] },
-			// ]);
+			app.router( {
+				'app': {
+					url: '',
+					component: Layout
+				},
+				'app.home': {
+					url: 'home',
+					component: Home
+				},
+				'app.settings': {
+					url: 'settings',
+					component: Settings
+				}
+			} );
 
 			app.start( '#app' );
 		</script>
