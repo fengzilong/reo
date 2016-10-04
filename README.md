@@ -10,7 +10,6 @@ app.use( plugin )
 app.model( ... )
 app.actions( ... )
 app.getters( ... )
-app.view( ... )
 app.router( ... )
 app.start( '#app' )
 ```

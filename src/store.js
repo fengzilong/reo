@@ -11,9 +11,7 @@ class Store {
 	getState() {
 		return this._state;
 	}
-	add( model ) {
-		const name = model.name;
-
+	registerModel( name, model ) {
 		this._models[ name ] = model;
 		this._modelArray.push( model );
 		this._state[ name ] = model.state;

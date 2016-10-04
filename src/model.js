@@ -1,28 +1,18 @@
 class Model {
 	constructor( {
-		name,
-		store,
 		state = {},
 		reducers = {}
 	} = {} ) {
-		this._name = name;
+		this._state = state;
 		this._reducers = reducers;
 		this._subscribers = [];
 		this._dispatching = false;
-		this._state = state;
-		this._store = store;
 	}
 	get state() {
 		return this._state;
 	}
 	set state( v ) {
 		throw new Error( 'cannot replace state directly' );
-	}
-	get name() {
-		return this._name;
-	}
-	set name( v ) {
-		throw new Error( 'cannot change model name directly' );
 	}
 	watch() {
 

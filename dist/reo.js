@@ -4,155 +4,6 @@
 	(global.reo = factory());
 }(this, (function () { 'use strict';
 
-var ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
-
-var Store = function Store() {
-	this._models = {};
-	this._modelArray = [];
-	this._state = {};
-	this._subscribers = {};
-	this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
-};
-Store.prototype.getState = function getState () {
-	return this._state;
-};
-Store.prototype.add = function add ( model ) {
-		var this$1 = this;
-
-	var name = model.name;
-
-	this._models[ name ] = model;
-	this._modelArray.push( model );
-	this._state[ name ] = model.state;
-
-	// auto subscribe model changes when added
-	model.subscribe( function ( type, payload ) {
-		this$1.notify( name, type, payload );
-	} );
-};
-Store.prototype.registerActions = function registerActions ( actions ) {
-	if( this._actions ) {
-		return console.error( 'actions already registered' );
-	}
-	this._actions = actions;
-};
-Store.prototype._commit = function _commit ( type, payload ) {
-	var parts = type.split( '/' );
-	var name = parts[0];
-		var truetype = parts[1];
-
-	var model = this._models[ name ];
-	if( model ) {
-		return model.commit( truetype, payload );
-	}
-};
-Store.prototype.dispatch = function dispatch ( type, payload ) {
-	if ( !this._actions[ type ] ) {
-		return console.error( ("action \"" + type + "\" is not found") );
-	}
-	return this._actions[ type ]( {
-		commit: this._commit.bind( this ),
-		dispatch: this.dispatch.bind( this )
-	}, payload );
-};
-Store.prototype.notify = function notify ( name, type, payload ) {
-		var this$1 = this;
-
-	var cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
-	var state = this._state;
-	for ( var i = 0, len = cbs.length; i < len; i++ ) {
-		var cb = cbs[ i ];
-		cb( { type: (name + "/" + type), payload: payload }, this$1._state );
-	}
-};
-Store.prototype.subscribe = function subscribe ( fn, names ) {
-		var this$1 = this;
-
-	if ( !names ) {
-		this._subscribers[ ALWAYS_NOTIFY_KEY ].push( fn );
-		return;
-	}
-
-	for ( var i = 0, len = names.length; i < len; i++ ) {
-		var name = names[ i ];
-		this$1._subscribers[ name ] = this$1._subscribers[ name ] || [];
-		this$1._subscribers[ name ].push( fn );
-	}
-};
-Store.prototype.toArray = function toArray () {
-	return this._modelArray;
-};
-
-var Model = function Model( ref ) {
-	if ( ref === void 0 ) ref = {};
-	var name = ref.name;
-	var store = ref.store;
-	var state = ref.state; if ( state === void 0 ) state = {};
-	var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
-
-	this._name = name;
-	this._reducers = reducers;
-	this._subscribers = [];
-	this._dispatching = false;
-	this._state = state;
-	this._store = store;
-};
-
-var prototypeAccessors = { state: {},name: {} };
-prototypeAccessors.state.get = function () {
-	return this._state;
-};
-prototypeAccessors.state.set = function ( v ) {
-	throw new Error( 'cannot replace state directly' );
-};
-prototypeAccessors.name.get = function () {
-	return this._name;
-};
-prototypeAccessors.name.set = function ( v ) {
-	throw new Error( 'cannot change model name directly' );
-};
-Model.prototype.watch = function watch () {
-
-};
-Model.prototype.subscribe = function subscribe ( fn ) {
-	this._subscribers.push( fn );
-};
-Model.prototype.commit = function commit ( type, payload ) {
-		var this$1 = this;
-
-	if( this._dispatching ) {
-		return;
-	}
-
-	// invalid action
-	if( typeof type !== 'string' ) {
-		return;
-	}
-
-	var reducers = this._reducers;
-	var state = this._state;
-
-	for ( var i in reducers ) {
-		if( type === i ) {
-			var reducer = reducers[ i ];
-			this$1._dispatching = true;
-			reducer( state, payload );
-			this$1._dispatching = false;
-			// notify subscribers
-			this$1.notify( type, payload );
-			break;
-		}
-	}
-};
-Model.prototype.notify = function notify ( type, payload ) {
-	var subscribers = this._subscribers;
-	for ( var i = 0, len = subscribers.length; i < len; i++ ) {
-		subscribers[ i ]( type, payload );
-	}
-};
-
-Object.defineProperties( Model.prototype, prototypeAccessors );
-
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 
@@ -983,14 +834,14 @@ var env = {
 	isRunning: isRunning
 };
 
-var config = {
+var config$1 = {
   'BEGIN': '{',
   'END': '}',
   'PRECOMPILE': false
 }
 
 var _$2 = util;
-var config$3 = config;
+var config$4 = config$1;
 
 // some custom tag  will conflict with the Lexer progress
 var conflictTag = {"}": "{", "]": "["};
@@ -1016,9 +867,9 @@ function wrapHander(handler){
 }
 
 function Lexer$1(input, opts){
-  if(conflictTag[config$3.END]){
-    this.markStart = conflictTag[config$3.END];
-    this.markEnd = config$3.END;
+  if(conflictTag[config$4.END]){
+    this.markStart = conflictTag[config$4.END];
+    this.markEnd = config$4.END;
   }
 
   this.input = (input||"").trim();
@@ -1118,8 +969,8 @@ lo.leave = function(state){
 
 
 Lexer$1.setup = function(){
-  macro.END = config$3.END;
-  macro.BEGIN = config$3.BEGIN;
+  macro.END = config$4.END;
+  macro.BEGIN = config$4.BEGIN;
   //
   map1 = genMap([
     // INIT
@@ -1406,7 +1257,7 @@ var node$1 = {
 
 var _$3 = util;
 
-var config$4 = config;
+var config$5 = config$1;
 var node = node$1;
 var Lexer$2 = Lexer_1;
 var varName = _$3.varName;
@@ -1609,7 +1460,7 @@ op.attvalue = function(mdf){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf(config$4.BEGIN) && ~value.indexOf(config$4.END) && mdf!=='cmpl'){
+      if(~value.indexOf(config$5.BEGIN) && ~value.indexOf(config$5.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser$1(value, { mode: 2 }).parse();
         if(parsed.length === 1 && parsed[0].type === 'expression') { return parsed[0]; }
@@ -4218,7 +4069,7 @@ f.total = function(array, key){
 var env$2 = env;
 var Lexer = Lexer_1;
 var Parser = Parser_1;
-var config$2 = config;
+var config$3 = config$1;
 var _$1 = util;
 var extend$1 = extend$2;
 var combine = {};
@@ -4357,7 +4208,7 @@ _$1.extend(Regular$1, {
       } 
 
       if(typeof template === 'string' ){
-        this.prototype.template = config$2.PRECOMPILE? new Parser(template).parse(): template;
+        this.prototype.template = config$3.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 
@@ -4423,7 +4274,7 @@ _$1.extend(Regular$1, {
       for(var i in name){
         // if you config
         if( i ==="END" || i==='BEGIN' )  { needGenLexer = true; }
-        config$2[i] = name[i];
+        config$3[i] = name[i];
       }
     }
     if(needGenLexer) { Lexer.setup(); }
@@ -5448,7 +5299,7 @@ Regular$5.plugin('$timeout', TimeoutModule);
 
 var index$1 = createCommonjsModule(function (module) {
 var env$$1 =  env;
-var config$$1 = config; 
+var config = config$1; 
 var Regular = module.exports = Regular_1;
 var Parser = Regular.Parser;
 var Lexer = Regular.Lexer;
@@ -5465,8 +5316,8 @@ Regular.parse = function(str, options){
   options = options || {};
 
   if(options.BEGIN || options.END){
-    if(options.BEGIN) { config$$1.BEGIN = options.BEGIN; }
-    if(options.END) { config$$1.END = options.END; }
+    if(options.BEGIN) { config.BEGIN = options.BEGIN; }
+    if(options.END) { config.END = options.END; }
     Lexer.setup();
   }
   var ast = new Parser(str).parse();
@@ -5474,182 +5325,2353 @@ Regular.parse = function(str, options){
 }
 });
 
-var View = function View( options ) {
-	var store = options.store;
-	var models = options.models;
-	var components = options.components;
-	var props = options.props;
-	var config = options.config;
+var eventemitter2 = createCommonjsModule(function (module, exports) {
+/*!
+ * EventEmitter2
+ * https://github.com/hij1nx/EventEmitter2
+ *
+ * Copyright (c) 2013 hij1nx
+ * Licensed under the MIT license.
+ */
+!function(undefined) {
 
-	delete options.store;
-	delete options.models;
-	delete options.props;
-	delete options.config;
-	delete options.components;
+  var isArray = Array.isArray ? Array.isArray : function _isArray(obj) {
+    return Object.prototype.toString.call(obj) === "[object Array]";
+  };
+  var defaultMaxListeners = 10;
 
-	models = models || [];
-	props = props || {};
-	config = config || function() {};
+  function init() {
+    this._events = {};
+    if (this._conf) {
+      configure.call(this, this._conf);
+    }
+  }
 
-	this._store = store;
-	this._props = props;
+  function configure(conf) {
+    if (conf) {
+      this._conf = conf;
 
-	var Component = index$1.extend( Object.assign(
-		options,
-		{
-			config: function config$1( data ) {
-				var this$1 = this;
+      conf.delimiter && (this.delimiter = conf.delimiter);
+      this._events.maxListeners = conf.maxListeners !== undefined ? conf.maxListeners : defaultMaxListeners;
+      conf.wildcard && (this.wildcard = conf.wildcard);
+      conf.newListener && (this.newListener = conf.newListener);
 
-				var state = store.getState();
-				for( var i in props ) {
-					var fn = props[ i ];
-					this$1.data[ i ] = fn( state );
-				}
+      if (this.wildcard) {
+        this.listenerTree = {};
+      }
+    } else {
+      this._events.maxListeners = defaultMaxListeners;
+    }
+  }
 
-				this.dispatch = function ( type, payload ) { return store.dispatch( type, payload ); };
+  function logPossibleMemoryLeak(count) {
+    console.error('(node) warning: possible EventEmitter memory ' +
+      'leak detected. %d listeners added. ' +
+      'Use emitter.setMaxListeners() to increase limit.',
+      count);
 
-				config.call( this, data );
-			}
-		}
-	) );
+    if (console.trace){
+      console.trace();
+    }
+  }
 
-	for ( var i in components ) {
-		Component.component( i, components[ i ] );
-	}
+  function EventEmitter(conf) {
+    this._events = {};
+    this.newListener = false;
+    configure.call(this, conf);
+  }
+  EventEmitter.EventEmitter2 = EventEmitter; // backwards compatibility for exporting EventEmitter property
 
-	// TODO: 返回Component，在start时再生成实例
-	this._view = new Component();
+  //
+  // Attention, function return type now is array, always !
+  // It has zero elements if no any matches found and one or more
+  // elements (leafs) if there are matches
+  //
+  function searchListenerTree(handlers, type, tree, i) {
+    if (!tree) {
+      return [];
+    }
+    var listeners=[], leaf, len, branch, xTree, xxTree, isolatedBranch, endReached,
+        typeLength = type.length, currentType = type[i], nextType = type[i+1];
+    if (i === typeLength && tree._listeners) {
+      //
+      // If at the end of the event(s) list and the tree has listeners
+      // invoke those listeners.
+      //
+      if (typeof tree._listeners === 'function') {
+        handlers && handlers.push(tree._listeners);
+        return [tree];
+      } else {
+        for (leaf = 0, len = tree._listeners.length; leaf < len; leaf++) {
+          handlers && handlers.push(tree._listeners[leaf]);
+        }
+        return [tree];
+      }
+    }
 
-	// TODO: $init events中订阅store，$destroy中销毁订阅
-	// view will be updated when model changes
-	store.subscribe( this.update.bind( this ), models.length > 0 ? models : void 0 );
+    if ((currentType === '*' || currentType === '**') || tree[currentType]) {
+      //
+      // If the event emitted is '*' at this part
+      // or there is a concrete match at this patch
+      //
+      if (currentType === '*') {
+        for (branch in tree) {
+          if (branch !== '_listeners' && tree.hasOwnProperty(branch)) {
+            listeners = listeners.concat(searchListenerTree(handlers, type, tree[branch], i+1));
+          }
+        }
+        return listeners;
+      } else if(currentType === '**') {
+        endReached = (i+1 === typeLength || (i+2 === typeLength && nextType === '*'));
+        if(endReached && tree._listeners) {
+          // The next element has a _listeners, add it to the handlers.
+          listeners = listeners.concat(searchListenerTree(handlers, type, tree, typeLength));
+        }
+
+        for (branch in tree) {
+          if (branch !== '_listeners' && tree.hasOwnProperty(branch)) {
+            if(branch === '*' || branch === '**') {
+              if(tree[branch]._listeners && !endReached) {
+                listeners = listeners.concat(searchListenerTree(handlers, type, tree[branch], typeLength));
+              }
+              listeners = listeners.concat(searchListenerTree(handlers, type, tree[branch], i));
+            } else if(branch === nextType) {
+              listeners = listeners.concat(searchListenerTree(handlers, type, tree[branch], i+2));
+            } else {
+              // No match on this one, shift into the tree but not in the type array.
+              listeners = listeners.concat(searchListenerTree(handlers, type, tree[branch], i));
+            }
+          }
+        }
+        return listeners;
+      }
+
+      listeners = listeners.concat(searchListenerTree(handlers, type, tree[currentType], i+1));
+    }
+
+    xTree = tree['*'];
+    if (xTree) {
+      //
+      // If the listener tree will allow any match for this part,
+      // then recursively explore all branches of the tree
+      //
+      searchListenerTree(handlers, type, xTree, i+1);
+    }
+
+    xxTree = tree['**'];
+    if(xxTree) {
+      if(i < typeLength) {
+        if(xxTree._listeners) {
+          // If we have a listener on a '**', it will catch all, so add its handler.
+          searchListenerTree(handlers, type, xxTree, typeLength);
+        }
+
+        // Build arrays of matching next branches and others.
+        for(branch in xxTree) {
+          if(branch !== '_listeners' && xxTree.hasOwnProperty(branch)) {
+            if(branch === nextType) {
+              // We know the next element will match, so jump twice.
+              searchListenerTree(handlers, type, xxTree[branch], i+2);
+            } else if(branch === currentType) {
+              // Current node matches, move into the tree.
+              searchListenerTree(handlers, type, xxTree[branch], i+1);
+            } else {
+              isolatedBranch = {};
+              isolatedBranch[branch] = xxTree[branch];
+              searchListenerTree(handlers, type, { '**': isolatedBranch }, i+1);
+            }
+          }
+        }
+      } else if(xxTree._listeners) {
+        // We have reached the end and still on a '**'
+        searchListenerTree(handlers, type, xxTree, typeLength);
+      } else if(xxTree['*'] && xxTree['*']._listeners) {
+        searchListenerTree(handlers, type, xxTree['*'], typeLength);
+      }
+    }
+
+    return listeners;
+  }
+
+  function growListenerTree(type, listener) {
+    var this$1 = this;
+
+
+    type = typeof type === 'string' ? type.split(this.delimiter) : type.slice();
+
+    //
+    // Looks for two consecutive '**', if so, don't add the event at all.
+    //
+    for(var i = 0, len = type.length; i+1 < len; i++) {
+      if(type[i] === '**' && type[i+1] === '**') {
+        return;
+      }
+    }
+
+    var tree = this.listenerTree;
+    var name = type.shift();
+
+    while (name !== undefined) {
+
+      if (!tree[name]) {
+        tree[name] = {};
+      }
+
+      tree = tree[name];
+
+      if (type.length === 0) {
+
+        if (!tree._listeners) {
+          tree._listeners = listener;
+        }
+        else {
+          if (typeof tree._listeners === 'function') {
+            tree._listeners = [tree._listeners];
+          }
+
+          tree._listeners.push(listener);
+
+          if (
+            !tree._listeners.warned &&
+            this$1._events.maxListeners > 0 &&
+            tree._listeners.length > this$1._events.maxListeners
+          ) {
+            tree._listeners.warned = true;
+            logPossibleMemoryLeak(tree._listeners.length);
+          }
+        }
+        return true;
+      }
+      name = type.shift();
+    }
+    return true;
+  }
+
+  // By default EventEmitters will print a warning if more than
+  // 10 listeners are added to it. This is a useful default which
+  // helps finding memory leaks.
+  //
+  // Obviously not all Emitters should be limited to 10. This function allows
+  // that to be increased. Set to zero for unlimited.
+
+  EventEmitter.prototype.delimiter = '.';
+
+  EventEmitter.prototype.setMaxListeners = function(n) {
+    if (n !== undefined) {
+      this._events || init.call(this);
+      this._events.maxListeners = n;
+      if (!this._conf) { this._conf = {}; }
+      this._conf.maxListeners = n;
+    }
+  };
+
+  EventEmitter.prototype.event = '';
+
+  EventEmitter.prototype.once = function(event, fn) {
+    this.many(event, 1, fn);
+    return this;
+  };
+
+  EventEmitter.prototype.many = function(event, ttl, fn) {
+    var self = this;
+
+    if (typeof fn !== 'function') {
+      throw new Error('many only accepts instances of Function');
+    }
+
+    function listener() {
+      if (--ttl === 0) {
+        self.off(event, listener);
+      }
+      fn.apply(this, arguments);
+    }
+
+    listener._origin = fn;
+
+    this.on(event, listener);
+
+    return self;
+  };
+
+  EventEmitter.prototype.emit = function() {
+    var arguments$1 = arguments;
+    var this$1 = this;
+
+
+    this._events || init.call(this);
+
+    var type = arguments[0];
+
+    if (type === 'newListener' && !this.newListener) {
+      if (!this._events.newListener) {
+        return false;
+      }
+    }
+
+    var al = arguments.length;
+    var args,l,i,j;
+    var handler;
+
+    if (this._all && this._all.length) {
+      handler = this._all.slice();
+      if (al > 3) {
+        args = new Array(al);
+        for (j = 0; j < al; j++) { args[j] = arguments$1[j]; }
+      }
+
+      for (i = 0, l = handler.length; i < l; i++) {
+        this$1.event = type;
+        switch (al) {
+        case 1:
+          handler[i].call(this$1, type);
+          break;
+        case 2:
+          handler[i].call(this$1, type, arguments$1[1]);
+          break;
+        case 3:
+          handler[i].call(this$1, type, arguments$1[1], arguments$1[2]);
+          break;
+        default:
+          handler[i].apply(this$1, args);
+        }
+      }
+    }
+
+    if (this.wildcard) {
+      handler = [];
+      var ns = typeof type === 'string' ? type.split(this.delimiter) : type.slice();
+      searchListenerTree.call(this, handler, ns, this.listenerTree, 0);
+    } else {
+      handler = this._events[type];
+      if (typeof handler === 'function') {
+        this.event = type;
+        switch (al) {
+        case 1:
+          handler.call(this);
+          break;
+        case 2:
+          handler.call(this, arguments[1]);
+          break;
+        case 3:
+          handler.call(this, arguments[1], arguments[2]);
+          break;
+        default:
+          args = new Array(al - 1);
+          for (j = 1; j < al; j++) { args[j - 1] = arguments$1[j]; }
+          handler.apply(this, args);
+        }
+        return true;
+      } else if (handler) {
+        // need to make copy of handlers because list can change in the middle
+        // of emit call
+        handler = handler.slice();
+      }
+    }
+
+    if (handler && handler.length) {
+      if (al > 3) {
+        args = new Array(al - 1);
+        for (j = 1; j < al; j++) { args[j - 1] = arguments$1[j]; }
+      }
+      for (i = 0, l = handler.length; i < l; i++) {
+        this$1.event = type;
+        switch (al) {
+        case 1:
+          handler[i].call(this$1);
+          break;
+        case 2:
+          handler[i].call(this$1, arguments$1[1]);
+          break;
+        case 3:
+          handler[i].call(this$1, arguments$1[1], arguments$1[2]);
+          break;
+        default:
+          handler[i].apply(this$1, args);
+        }
+      }
+      return true;
+    } else if (!this._all && type === 'error') {
+      if (arguments[1] instanceof Error) {
+        throw arguments[1]; // Unhandled 'error' event
+      } else {
+        throw new Error("Uncaught, unspecified 'error' event.");
+      }
+      return false;
+    }
+
+    return !!this._all;
+  };
+
+  EventEmitter.prototype.emitAsync = function() {
+    var arguments$1 = arguments;
+    var this$1 = this;
+
+
+    this._events || init.call(this);
+
+    var type = arguments[0];
+
+    if (type === 'newListener' && !this.newListener) {
+        if (!this._events.newListener) { return Promise.resolve([false]); }
+    }
+
+    var promises= [];
+
+    var al = arguments.length;
+    var args,l,i,j;
+    var handler;
+
+    if (this._all) {
+      if (al > 3) {
+        args = new Array(al);
+        for (j = 1; j < al; j++) { args[j] = arguments$1[j]; }
+      }
+      for (i = 0, l = this._all.length; i < l; i++) {
+        this$1.event = type;
+        switch (al) {
+        case 1:
+          promises.push(this$1._all[i].call(this$1, type));
+          break;
+        case 2:
+          promises.push(this$1._all[i].call(this$1, type, arguments$1[1]));
+          break;
+        case 3:
+          promises.push(this$1._all[i].call(this$1, type, arguments$1[1], arguments$1[2]));
+          break;
+        default:
+          promises.push(this$1._all[i].apply(this$1, args));
+        }
+      }
+    }
+
+    if (this.wildcard) {
+      handler = [];
+      var ns = typeof type === 'string' ? type.split(this.delimiter) : type.slice();
+      searchListenerTree.call(this, handler, ns, this.listenerTree, 0);
+    } else {
+      handler = this._events[type];
+    }
+
+    if (typeof handler === 'function') {
+      this.event = type;
+      switch (al) {
+      case 1:
+        promises.push(handler.call(this));
+        break;
+      case 2:
+        promises.push(handler.call(this, arguments[1]));
+        break;
+      case 3:
+        promises.push(handler.call(this, arguments[1], arguments[2]));
+        break;
+      default:
+        args = new Array(al - 1);
+        for (j = 1; j < al; j++) { args[j - 1] = arguments$1[j]; }
+        promises.push(handler.apply(this, args));
+      }
+    } else if (handler && handler.length) {
+      if (al > 3) {
+        args = new Array(al - 1);
+        for (j = 1; j < al; j++) { args[j - 1] = arguments$1[j]; }
+      }
+      for (i = 0, l = handler.length; i < l; i++) {
+        this$1.event = type;
+        switch (al) {
+        case 1:
+          promises.push(handler[i].call(this$1));
+          break;
+        case 2:
+          promises.push(handler[i].call(this$1, arguments$1[1]));
+          break;
+        case 3:
+          promises.push(handler[i].call(this$1, arguments$1[1], arguments$1[2]));
+          break;
+        default:
+          promises.push(handler[i].apply(this$1, args));
+        }
+      }
+    } else if (!this._all && type === 'error') {
+      if (arguments[1] instanceof Error) {
+        return Promise.reject(arguments[1]); // Unhandled 'error' event
+      } else {
+        return Promise.reject("Uncaught, unspecified 'error' event.");
+      }
+    }
+
+    return Promise.all(promises);
+  };
+
+  EventEmitter.prototype.on = function(type, listener) {
+    if (typeof type === 'function') {
+      this.onAny(type);
+      return this;
+    }
+
+    if (typeof listener !== 'function') {
+      throw new Error('on only accepts instances of Function');
+    }
+    this._events || init.call(this);
+
+    // To avoid recursion in the case that type == "newListeners"! Before
+    // adding it to the listeners, first emit "newListeners".
+    this.emit('newListener', type, listener);
+
+    if (this.wildcard) {
+      growListenerTree.call(this, type, listener);
+      return this;
+    }
+
+    if (!this._events[type]) {
+      // Optimize the case of one listener. Don't need the extra array object.
+      this._events[type] = listener;
+    }
+    else {
+      if (typeof this._events[type] === 'function') {
+        // Change to array.
+        this._events[type] = [this._events[type]];
+      }
+
+      // If we've already got an array, just append.
+      this._events[type].push(listener);
+
+      // Check for listener leak
+      if (
+        !this._events[type].warned &&
+        this._events.maxListeners > 0 &&
+        this._events[type].length > this._events.maxListeners
+      ) {
+        this._events[type].warned = true;
+        logPossibleMemoryLeak(this._events[type].length);
+      }
+    }
+
+    return this;
+  };
+
+  EventEmitter.prototype.onAny = function(fn) {
+    if (typeof fn !== 'function') {
+      throw new Error('onAny only accepts instances of Function');
+    }
+
+    if (!this._all) {
+      this._all = [];
+    }
+
+    // Add the function to the event listener collection.
+    this._all.push(fn);
+    return this;
+  };
+
+  EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+
+  EventEmitter.prototype.off = function(type, listener) {
+    var this$1 = this;
+
+    if (typeof listener !== 'function') {
+      throw new Error('removeListener only takes instances of Function');
+    }
+
+    var handlers,leafs=[];
+
+    if(this.wildcard) {
+      var ns = typeof type === 'string' ? type.split(this.delimiter) : type.slice();
+      leafs = searchListenerTree.call(this, null, ns, this.listenerTree, 0);
+    }
+    else {
+      // does not use listeners(), so no side effect of creating _events[type]
+      if (!this._events[type]) { return this; }
+      handlers = this._events[type];
+      leafs.push({_listeners:handlers});
+    }
+
+    for (var iLeaf=0; iLeaf<leafs.length; iLeaf++) {
+      var leaf = leafs[iLeaf];
+      handlers = leaf._listeners;
+      if (isArray(handlers)) {
+
+        var position = -1;
+
+        for (var i = 0, length = handlers.length; i < length; i++) {
+          if (handlers[i] === listener ||
+            (handlers[i].listener && handlers[i].listener === listener) ||
+            (handlers[i]._origin && handlers[i]._origin === listener)) {
+            position = i;
+            break;
+          }
+        }
+
+        if (position < 0) {
+          continue;
+        }
+
+        if(this$1.wildcard) {
+          leaf._listeners.splice(position, 1);
+        }
+        else {
+          this$1._events[type].splice(position, 1);
+        }
+
+        if (handlers.length === 0) {
+          if(this$1.wildcard) {
+            delete leaf._listeners;
+          }
+          else {
+            delete this$1._events[type];
+          }
+        }
+
+        this$1.emit("removeListener", type, listener);
+
+        return this$1;
+      }
+      else if (handlers === listener ||
+        (handlers.listener && handlers.listener === listener) ||
+        (handlers._origin && handlers._origin === listener)) {
+        if(this$1.wildcard) {
+          delete leaf._listeners;
+        }
+        else {
+          delete this$1._events[type];
+        }
+
+        this$1.emit("removeListener", type, listener);
+      }
+    }
+
+    function recursivelyGarbageCollect(root) {
+      if (root === undefined) {
+        return;
+      }
+      var keys = Object.keys(root);
+      for (var i in keys) {
+        var key = keys[i];
+        var obj = root[key];
+        if ((obj instanceof Function) || (typeof obj !== "object") || (obj === null))
+          { continue; }
+        if (Object.keys(obj).length > 0) {
+          recursivelyGarbageCollect(root[key]);
+        }
+        if (Object.keys(obj).length === 0) {
+          delete root[key];
+        }
+      }
+    }
+    recursivelyGarbageCollect(this.listenerTree);
+
+    return this;
+  };
+
+  EventEmitter.prototype.offAny = function(fn) {
+    var this$1 = this;
+
+    var i = 0, l = 0, fns;
+    if (fn && this._all && this._all.length > 0) {
+      fns = this._all;
+      for(i = 0, l = fns.length; i < l; i++) {
+        if(fn === fns[i]) {
+          fns.splice(i, 1);
+          this$1.emit("removeListenerAny", fn);
+          return this$1;
+        }
+      }
+    } else {
+      fns = this._all;
+      for(i = 0, l = fns.length; i < l; i++)
+        { this$1.emit("removeListenerAny", fns[i]); }
+      this._all = [];
+    }
+    return this;
+  };
+
+  EventEmitter.prototype.removeListener = EventEmitter.prototype.off;
+
+  EventEmitter.prototype.removeAllListeners = function(type) {
+    if (arguments.length === 0) {
+      !this._events || init.call(this);
+      return this;
+    }
+
+    if (this.wildcard) {
+      var ns = typeof type === 'string' ? type.split(this.delimiter) : type.slice();
+      var leafs = searchListenerTree.call(this, null, ns, this.listenerTree, 0);
+
+      for (var iLeaf=0; iLeaf<leafs.length; iLeaf++) {
+        var leaf = leafs[iLeaf];
+        leaf._listeners = null;
+      }
+    }
+    else if (this._events) {
+      this._events[type] = null;
+    }
+    return this;
+  };
+
+  EventEmitter.prototype.listeners = function(type) {
+    if (this.wildcard) {
+      var handlers = [];
+      var ns = typeof type === 'string' ? type.split(this.delimiter) : type.slice();
+      searchListenerTree.call(this, handlers, ns, this.listenerTree, 0);
+      return handlers;
+    }
+
+    this._events || init.call(this);
+
+    if (!this._events[type]) { this._events[type] = []; }
+    if (!isArray(this._events[type])) {
+      this._events[type] = [this._events[type]];
+    }
+    return this._events[type];
+  };
+
+  EventEmitter.prototype.listenerCount = function(type) {
+    return this.listeners(type).length;
+  };
+
+  EventEmitter.prototype.listenersAny = function() {
+
+    if(this._all) {
+      return this._all;
+    }
+    else {
+      return [];
+    }
+
+  };
+
+  if (typeof define === 'function' && define.amd) {
+     // AMD. Register as an anonymous module.
+    define(function() {
+      return EventEmitter;
+    });
+  } else if (typeof exports === 'object') {
+    // CommonJS
+    module.exports = EventEmitter;
+  }
+  else {
+    // Browser global.
+    window.EventEmitter2 = EventEmitter;
+  }
+}();
+});
+
+var ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
+
+var Store = function Store() {
+	this._models = {};
+	this._modelArray = [];
+	this._state = {};
+	this._subscribers = {};
+	this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
 };
-View.prototype.inject = function inject () {
-		var args = [], len = arguments.length;
-		while ( len-- ) args[ len ] = arguments[ len ];
-
-	(ref = this._view).$inject.apply( ref, args );
-		var ref;
+Store.prototype.getState = function getState () {
+	return this._state;
 };
-View.prototype.update = function update () {
+Store.prototype.registerModel = function registerModel ( name, model ) {
 		var this$1 = this;
 
-	var state = this._store.getState();
-	var props = this._props;
-	for( var i in props ) {
-		var fn = props[ i ];
-		this$1._view.data[ i ] = fn( state );
+	this._models[ name ] = model;
+	this._modelArray.push( model );
+	this._state[ name ] = model.state;
+
+	// auto subscribe model changes when added
+	model.subscribe( function ( type, payload ) {
+		this$1.notify( name, type, payload );
+	} );
+};
+Store.prototype.registerActions = function registerActions ( actions ) {
+	if( this._actions ) {
+		return console.error( 'actions already registered' );
+	}
+	this._actions = actions;
+};
+Store.prototype._commit = function _commit ( type, payload ) {
+	var parts = type.split( '/' );
+	var name = parts[0];
+		var truetype = parts[1];
+
+	var model = this._models[ name ];
+	if( model ) {
+		return model.commit( truetype, payload );
+	}
+};
+Store.prototype.dispatch = function dispatch ( type, payload ) {
+	if ( !this._actions[ type ] ) {
+		return console.error( ("action \"" + type + "\" is not found") );
+	}
+	return this._actions[ type ]( {
+		commit: this._commit.bind( this ),
+		dispatch: this.dispatch.bind( this )
+	}, payload );
+};
+Store.prototype.notify = function notify ( name, type, payload ) {
+		var this$1 = this;
+
+	var cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
+	var state = this._state;
+	for ( var i = 0, len = cbs.length; i < len; i++ ) {
+		var cb = cbs[ i ];
+		cb( { type: (name + "/" + type), payload: payload }, this$1._state );
+	}
+};
+Store.prototype.subscribe = function subscribe ( fn, names ) {
+		var this$1 = this;
+
+	if ( !names ) {
+		this._subscribers[ ALWAYS_NOTIFY_KEY ].push( fn );
+		return;
 	}
 
-	// you should know that, data is sync updated, only the view is delayed, and view is also rendered asap( use requestAnimationFrame, ), so the data flow is still in order, and data is always newest and correct
-
-	// TODO: for every view, merge multiple updates into one
-	// just send update signal, and gather them in next frame
-
-	setTimeout(function () {
-		this$1._view.$update();
-	}, 0);
+	for ( var i = 0, len = names.length; i < len; i++ ) {
+		var name = names[ i ];
+		this$1._subscribers[ name ] = this$1._subscribers[ name ] || [];
+		this$1._subscribers[ name ].push( fn );
+	}
+};
+Store.prototype.toArray = function toArray () {
+	return this._modelArray;
 };
 
-var App = function App() {
-	this._viewConfigs = [];
-	this._views = [];
-	this._store = new Store();
-	this._plugins = [];
+var Model = function Model( ref ) {
+	if ( ref === void 0 ) ref = {};
+	var state = ref.state; if ( state === void 0 ) state = {};
+	var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
+
+	this._state = state;
+	this._reducers = reducers;
+	this._subscribers = [];
+	this._dispatching = false;
 };
-App.prototype.use = function use ( plugin ) {
-	// to get the correct store._state, execute all plugins until app.start is called
-	this._plugins.push( plugin );
+
+var prototypeAccessors = { state: {} };
+prototypeAccessors.state.get = function () {
+	return this._state;
 };
-App.prototype.model = function model ( ref ) {
+prototypeAccessors.state.set = function ( v ) {
+	throw new Error( 'cannot replace state directly' );
+};
+Model.prototype.watch = function watch () {
+
+};
+Model.prototype.subscribe = function subscribe ( fn ) {
+	this._subscribers.push( fn );
+};
+Model.prototype.commit = function commit ( type, payload ) {
+		var this$1 = this;
+
+	if( this._dispatching ) {
+		return;
+	}
+
+	// invalid action
+	if( typeof type !== 'string' ) {
+		return;
+	}
+
+	var reducers = this._reducers;
+	var state = this._state;
+
+	for ( var i in reducers ) {
+		if( type === i ) {
+			var reducer = reducers[ i ];
+			this$1._dispatching = true;
+			reducer( state, payload );
+			this$1._dispatching = false;
+			// notify subscribers
+			this$1.notify( type, payload );
+			break;
+		}
+	}
+};
+Model.prototype.notify = function notify ( type, payload ) {
+	var subscribers = this._subscribers;
+	for ( var i = 0, len = subscribers.length; i < len; i++ ) {
+		subscribers[ i ]( type, payload );
+	}
+};
+
+Object.defineProperties( Model.prototype, prototypeAccessors );
+
+var PulginManager = function PulginManager( app ) {
+	this._app = app;
+};
+PulginManager.prototype.register = function register ( plugin ) {
+		var this$1 = this;
+
+	this._app.once( 'before-start', function () {
+		this$1.use( plugin );
+	} );
+};
+PulginManager.prototype.use = function use ( plugin ) {
+	var store = this._app._store;
+	plugin( store );
+};
+
+var ViewManager = function ViewManager( app ) {
+	var store = app._store;
+	var Base = app._Base;
+	Base.implement( {
+		events: {
+			$config: function $config() {
+				// auto-subscribe
+				var models = this.models;
+				store.subscribe( this.$update.bind( this ), models );
+			}
+		},
+		dispatch: function dispatch() {
+			var args = [], len = arguments.length;
+			while ( len-- ) args[ len ] = arguments[ len ];
+
+			return store.dispatch.apply( store, args );
+		}
+	} );
+};
+
+var regularRouter = createCommonjsModule(function (module, exports) {
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global.regularRouter = factory());
+}(commonjsGlobal, (function () { 'use strict';
+
+function createCommonjsModule$$1(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
+
+var util = createCommonjsModule$$1(function (module) {
+var _ = module.exports = {};
+var slice = [].slice, o2str = ({}).toString;
+
+
+// merge o2's properties to Object o1. 
+_.extend = function(o1, o2, override){
+  for(var i in o2) { if(override || o1[i] === undefined){
+    o1[i] = o2[i]
+  } }
+  return o1;
+}
+
+
+
+_.slice = function(arr, index){
+  return slice.call(arr, index);
+}
+
+_.typeOf = function typeOf (o) {
+  return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
+}
+
+//strict eql
+_.eql = function(o1, o2){
+  var t1 = _.typeOf(o1), t2 = _.typeOf(o2);
+  if( t1 !== t2) { return false; }
+  if(t1 === 'object'){
+    var equal = true;
+    // only check the first's propertie
+    for(var i in o1){
+      if( o1[i] !== o2[i] ) { equal = false; }
+    }
+    return equal;
+  }
+  return o1 === o2;
+}
+
+
+// small emitter 
+_.emitable = (function(){
+  function norm(ev){
+    var eventAndNamespace = (ev||'').split(':');
+    return {event: eventAndNamespace[0], namespace: eventAndNamespace[1]}
+  }
+  var API = {
+    once: function(event, fn){
+      var callback = function(){
+        fn.apply(this, arguments)
+        this.off(event, callback)
+      }
+      return this.on(event, callback)
+    },
+    on: function(event, fn) {
+      var this$1 = this;
+
+      if(typeof event === 'object'){
+        for (var i in event) {
+          this$1.on(i, event[i]);
+        }
+        return this;
+      }
+      var ne = norm(event);
+      event=ne.event;
+      if(event && typeof fn === 'function' ){
+        var handles = this._handles || (this._handles = {}),
+          calls = handles[event] || (handles[event] = []);
+        fn._ns = ne.namespace;
+        calls.push(fn);
+      }
+      return this;
+    },
+    off: function(event, fn) {
+      var this$1 = this;
+
+      var ne = norm(event); event = ne.event;
+      if(!event || !this._handles) { this._handles = {}; }
+
+      var handles = this._handles , calls;
+
+      if (calls = handles[event]) {
+        if (!fn && !ne.namespace) {
+          handles[event] = [];
+        }else{
+          for (var i = 0, len = calls.length; i < len; i++) {
+            if ( (!fn || fn === calls[i]) && (!ne.namespace || calls[i]._ns === ne.namespace) ) {
+              calls.splice(i, 1);
+              return this$1;
+            }
+          }
+        }
+      }
+      return this;
+    },
+    emit: function(event){
+      var this$1 = this;
+
+      var ne = norm(event); event = ne.event;
+
+      var args = _.slice(arguments, 1),
+        handles = this._handles, calls;
+
+      if (!handles || !(calls = handles[event])) { return this; }
+      for (var i = 0, len = calls.length; i < len; i++) {
+        var fn = calls[i];
+        if( !ne.namespace || fn._ns === ne.namespace ) { fn.apply(this$1, args) }
+      }
+      return this;
+    }
+  }
+  return function(obj){
+      obj = typeof obj == "function" ? obj.prototype : obj;
+      return _.extend(obj, API)
+  }
+})();
+
+
+
+_.bind = function(fn, context){
+  return function(){
+    return fn.apply(context, arguments);
+  }
+}
+
+var rDbSlash = /\/+/g, // double slash
+  rEndSlash = /\/$/;    // end slash
+
+_.cleanPath = function (path){
+  return ("/" + path).replace( rDbSlash,"/" ).replace( rEndSlash, "" ) || "/";
+}
+
+// normalize the path
+function normalizePath(path) {
+  // means is from 
+  // (?:\:([\w-]+))?(?:\(([^\/]+?)\))|(\*{2,})|(\*(?!\*)))/g
+  var preIndex = 0;
+  var keys = [];
+  var index = 0;
+  var matches = "";
+
+  path = _.cleanPath(path);
+
+  var regStr = path
+    //  :id(capture)? | (capture)   |  ** | * 
+    .replace(/\:([\w-]+)(?:\(([^\/]+?)\))?|(?:\(([^\/]+)\))|(\*{2,})|(\*(?!\*))/g, 
+      function(all, key, keyformat, capture, mwild, swild, startAt) {
+        // move the uncaptured fragment in the path
+        if(startAt > preIndex) { matches += path.slice(preIndex, startAt); }
+        preIndex = startAt + all.length;
+        if( key ){
+          matches += "(" + key + ")";
+          keys.push(key)
+          return "("+( keyformat || "[\\w-]+")+")";
+        }
+        matches += "(" + index + ")";
+
+        keys.push( index++ );
+
+        if( capture ){
+           // sub capture detect
+          return "(" + capture +  ")";
+        } 
+        if(mwild) { return "(.*)"; }
+        if(swild) { return "([^\\/]*)"; }
+    })
+
+  if(preIndex !== path.length) { matches += path.slice(preIndex) }
+
+  return {
+    regexp: new RegExp("^" + regStr +"/?$"),
+    keys: keys,
+    matches: matches || path
+  }
+}
+
+_.log = function(msg, type){
+  typeof console !== "undefined" && console[type || "log"](msg)
+}
+
+_.isPromise = function( obj ){
+
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
+
+}
+
+
+
+_.normalize = normalizePath;
+});
+
+var _$1 = util;
+
+
+
+function State$1(option){
+  this._states = {};
+  this._pending = false;
+  this.visited = false;
+  if(option) { this.config(option); }
+}
+
+
+//regexp cache
+State$1.rCache = {};
+
+_$1.extend( _$1.emitable( State$1 ), {
+  
+  state: function(stateName, config){
+    var this$1 = this;
+
+    if(_$1.typeOf(stateName) === "object"){
+      for(var i in stateName){
+        this$1.state(i, stateName[i])
+      }
+      return this;
+    }
+    var current, next, nextName, states = this._states, i=0;
+
+    if( typeof stateName === "string" ) { stateName = stateName.split("."); }
+
+    var slen = stateName.length, current = this;
+    var stack = [];
+
+
+    do{
+      nextName = stateName[i];
+      next = states[nextName];
+      stack.push(nextName);
+      if(!next){
+        if(!config) { return; }
+        next = states[nextName] = new State$1();
+        _$1.extend(next, {
+          parent: current,
+          manager: current.manager || current,
+          name: stack.join("."),
+          currentName: nextName
+        })
+        current.hasNext = true;
+        next.configUrl();
+      }
+      current = next;
+      states = next._states;
+    }while((++i) < slen )
+
+    if(config){
+       next.config(config);
+       return this;
+    } else {
+      return current;
+    }
+  },
+
+  config: function(configure){
+    var this$1 = this;
+
+
+    configure = this._getConfig(configure);
+
+    for(var i in configure){
+      var prop = configure[i];
+      switch(i){
+        case "url": 
+          if(typeof prop === "string"){
+            this$1.url = prop;
+            this$1.configUrl();
+          }
+          break;
+        case "events": 
+          this$1.on(prop)
+          break;
+        default:
+          this$1[i] = prop;
+      }
+    }
+  },
+
+  // children override
+  _getConfig: function(configure){
+    return typeof configure === "function"? {enter: configure} : configure;
+  },
+
+  //from url 
+
+  configUrl: function(){
+    var url = "" , base = this, currentUrl;
+    var _watchedParam = [];
+
+    while( base ){
+
+      url = (typeof base.url === "string" ? base.url: (base.currentName || "")) + "/" + url;
+
+      // means absolute;
+      if(url.indexOf("^/") === 0) {
+        url = url.slice(1);
+        break;
+      }
+      base = base.parent;
+    }
+    this.pattern = _$1.cleanPath("/" + url);
+    var pathAndQuery = this.pattern.split("?");
+    this.pattern = pathAndQuery[0];
+    // some Query we need watched
+
+    _$1.extend(this, _$1.normalize(this.pattern), true);
+  },
+  encode: function(param){
+    var state = this;
+    param = param || {};
+    
+    var matched = "%";
+
+    var url = state.matches.replace(/\(([\w-]+)\)/g, function(all, capture){
+      var sec = param[capture] || "";
+      matched+= capture + "%";
+      return sec;
+    }) + "?";
+
+    // remained is the query, we need concat them after url as query
+    for(var i in param) {
+      if( matched.indexOf("%"+i+"%") === -1) { url += i + "=" + param[i] + "&"; }
+    }
+    return _$1.cleanPath( url.replace(/(?:\?|&)$/,"") )
+  },
+  decode: function( path ){
+    var matched = this.regexp.exec(path),
+      keys = this.keys;
+
+    if(matched){
+
+      var param = {};
+      for(var i =0,len=keys.length;i<len;i++){
+        param[keys[i]] = matched[i+1] 
+      }
+      return param;
+    }else{
+      return false;
+    }
+  },
+  // by default, all lifecycle is permitted
+
+  async: function(){
+    throw new Error( 'please use option.async instead')
+  }
+
+})
+
+
+var state = State$1;
+
+var browser$1 = createCommonjsModule$$1(function (module) {
+var win = window, 
+  doc = document;
+
+var b = module.exports = {
+  hash: "onhashchange" in win && (!doc.documentMode || doc.documentMode > 7),
+  history: win.history && "onpopstate" in win,
+  location: win.location,
+  getHref: function(node){
+    return "href" in node ? node.getAttribute("href", 2) : node.getAttribute("href");
+  },
+  on: "addEventListener" in win ?  // IE10 attachEvent is not working when binding the onpopstate, so we need check addEventLister first
+      function(node,type,cb){return node.addEventListener( type, cb )}
+    : function(node,type,cb){return node.attachEvent( "on" + type, cb )},
+    
+  off: "removeEventListener" in win ? 
+      function(node,type,cb){return node.removeEventListener( type, cb )}
+    : function(node,type,cb){return node.detachEvent( "on" + type, cb )}
+}
+});
+
+// MIT
+// Thx Backbone.js 1.1.2  and https://github.com/cowboy/jquery-hashchange/blob/master/jquery.ba-hashchange.js
+// for iframe patches in old ie.
+
+var browser = browser$1;
+var _$2 = util;
+
+
+// the mode const
+var QUIRK = 3;
+var HASH = 1;
+var HISTORY = 2;
+
+
+
+// extract History for test
+// resolve the conficlt with the Native History
+function Histery$1(options){
+  options = options || {};
+
+  // Trick from backbone.history for anchor-faked testcase 
+  this.location = options.location || browser.location;
+
+  // mode config, you can pass absolute mode (just for test);
+  this.html5 = options.html5;
+  this.mode = options.html5 && browser.history ? HISTORY: HASH; 
+  if( !browser.hash ) { this.mode = QUIRK; }
+  if(options.mode) { this.mode = options.mode; }
+
+  // hash prefix , used for hash or quirk mode
+  this.prefix = "#" + (options.prefix || "") ;
+  this.rPrefix = new RegExp(this.prefix + '(.*)$');
+  this.interval = options.interval || 66;
+
+  // the root regexp for remove the root for the path. used in History mode
+  this.root = options.root ||  "/" ;
+  this.rRoot = new RegExp("^" +  this.root);
+
+  this._fixInitState();
+
+  this.autolink = options.autolink!==false;
+
+  this.curPath = undefined;
+}
+
+_$2.extend( _$2.emitable(Histery$1), {
+  // check the 
+  start: function(){
+    var path = this.getPath();
+    this._checkPath = _$2.bind(this.checkPath, this);
+
+    if( this.isStart ) { return; }
+    this.isStart = true;
+
+    if(this.mode === QUIRK){
+      this._fixHashProbelm(path); 
+    }
+
+    switch ( this.mode ){
+      case HASH: 
+        browser.on(window, "hashchange", this._checkPath); 
+        break;
+      case HISTORY:
+        browser.on(window, "popstate", this._checkPath);
+        break;
+      case QUIRK:
+        this._checkLoop();
+    }
+    // event delegate
+    this.autolink && this._autolink();
+
+    this.curPath = path;
+
+    this.emit("change", path);
+  },
+  // the history teardown
+  stop: function(){
+
+    browser.off(window, 'hashchange', this._checkPath)  
+    browser.off(window, 'popstate', this._checkPath)  
+    clearTimeout(this.tid);
+    this.isStart = false;
+    this._checkPath = null;
+  },
+  // get the path modify
+  checkPath: function(ev){
+
+    var path = this.getPath(), curPath = this.curPath;
+
+    //for oldIE hash history issue
+    if(path === curPath && this.iframe){
+      path = this.getPath(this.iframe.location);
+    }
+
+    if( path !== curPath ) {
+      this.iframe && this.nav(path, {silent: true});
+      this.curPath = path;
+      this.emit('change', path);
+    }
+  },
+  // get the current path
+  getPath: function(location){
+    var location = location || this.location, tmp;
+    if( this.mode !== HISTORY ){
+      tmp = location.href.match(this.rPrefix);
+      return tmp && tmp[1]? tmp[1]: "";
+
+    }else{
+      return _$2.cleanPath(( location.pathname + location.search || "" ).replace( this.rRoot, "/" ))
+    }
+  },
+
+  nav: function(to, options ){
+
+    var iframe = this.iframe;
+
+    options = options || {};
+
+    to = _$2.cleanPath(to);
+
+    if(this.curPath == to) { return; }
+
+    // pushState wont trigger the checkPath
+    // but hashchange will
+    // so we need set curPath before to forbit the CheckPath
+    this.curPath = to;
+
+    // 3 or 1 is matched
+    if( this.mode !== HISTORY ){
+      this._setHash(this.location, to, options.replace)
+      if( iframe && this.getPath(iframe.location) !== to ){
+        if(!options.replace) { iframe.document.open().close(); }
+        this._setHash(this.iframe.location, to, options.replace)
+      }
+    }else{
+      history[options.replace? 'replaceState': 'pushState']( {}, options.title || "" , _$2.cleanPath( this.root + to ) )
+    }
+
+    if( !options.silent ) { this.emit('change', to); }
+  },
+  _autolink: function(){
+    if(this.mode!==HISTORY) { return; }
+    // only in html5 mode, the autolink is works
+    // if(this.mode !== 2) return;
+    var prefix = this.prefix, self = this;
+    browser.on( document.body, "click", function(ev){
+
+      var target = ev.target || ev.srcElement;
+      if( target.tagName.toLowerCase() !== "a" ) { return; }
+      var tmp = (browser.getHref(target)||"").match(self.rPrefix);
+      var hash = tmp && tmp[1]? tmp[1]: "";
+
+      if(!hash) { return; }
+      
+      ev.preventDefault && ev.preventDefault();
+      self.nav( hash )
+      return (ev.returnValue = false);
+    } )
+  },
+  _setHash: function(location, path, replace){
+    var href = location.href.replace(/(javascript:|#).*$/, '');
+    if (replace){
+      location.replace(href + this.prefix+ path);
+    }
+    else { location.hash = this.prefix+ path; }
+  },
+  // for browser that not support onhashchange
+  _checkLoop: function(){
+    var self = this; 
+    this.tid = setTimeout( function(){
+      self._checkPath();
+      self._checkLoop();
+    }, this.interval );
+  },
+  // if we use real url in hash env( browser no history popstate support)
+  // or we use hash in html5supoort mode (when paste url in other url)
+  // then , histery should repara it
+  _fixInitState: function(){
+    var pathname = _$2.cleanPath(this.location.pathname), hash, hashInPathName;
+
+    // dont support history popstate but config the html5 mode
+    if( this.mode !== HISTORY && this.html5){
+
+      hashInPathName = pathname.replace(this.rRoot, "")
+      if(hashInPathName) { this.location.replace(this.root + this.prefix + hashInPathName); }
+
+    }else if( this.mode === HISTORY /* && pathname === this.root*/){
+
+      hash = this.location.hash.replace(this.prefix, "");
+      if(hash) { history.replaceState({}, document.title, _$2.cleanPath(this.root + hash)) }
+
+    }
+  },
+  // Thanks for backbone.history and https://github.com/cowboy/jquery-hashchange/blob/master/jquery.ba-hashchange.js
+  // for helping stateman fixing the oldie hash history issues when with iframe hack
+  _fixHashProbelm: function(path){
+    var iframe = document.createElement('iframe'), body = document.body;
+    iframe.src = 'javascript:;';
+    iframe.style.display = 'none';
+    iframe.tabIndex = -1;
+    iframe.title = "";
+    this.iframe = body.insertBefore(iframe, body.firstChild).contentWindow;
+    this.iframe.document.open().close();
+    this.iframe.location.hash = '#' + path;
+  }
+  
+})
+
+
+
+
+
+var histery = Histery$1;
+
+var State = state;
+var Histery = histery;
+var _ = util;
+var baseTitle = document.title;
+var stateFn = State.prototype.state;
+
+
+function StateMan$1(options){
+
+  if(this instanceof StateMan$1 === false){ return new StateMan$1(options)}
+  options = options || {};
+  // if(options.history) this.history = options.history;
+
+  this._states = {};
+  this._stashCallback = [];
+  this.strict = options.strict;
+  this.current = this.active = this;
+  this.title = options.title;
+  this.on("end", function(){
+    var cur = this.current,title;
+    while( cur ){
+      title = cur.title;
+      if(title) { break; } 
+      cur = cur.parent;
+    }
+    document.title = typeof title === "function"? cur.title(): String( title || baseTitle ) ;
+  })
+
+}
+
+
+_.extend( _.emitable( StateMan$1 ), {
+    // keep blank
+    name: '',
+
+    state: function(stateName, config){
+
+      var active = this.active;
+      if(typeof stateName === "string" && active){
+         stateName = stateName.replace("~", active.name)
+         if(active.parent) { stateName = stateName.replace("^", active.parent.name || ""); }
+      }
+      // ^ represent current.parent
+      // ~ represent  current
+      // only 
+      return stateFn.apply(this, arguments);
+
+    },
+    start: function(options){
+
+      if( !this.history ) { this.history = new Histery(options); } 
+      if( !this.history.isStart ){
+        this.history.on("change", _.bind(this._afterPathChange, this));
+        this.history.start();
+      } 
+      return this;
+
+    },
+    stop: function(){
+      this.history.stop();
+    },
+    // @TODO direct go the point state
+    go: function(state$$1, option, callback){
+      option = option || {};
+      if(typeof state$$1 === "string") { state$$1 = this.state(state$$1); }
+
+      if(!state$$1) { return; }
+
+      if(typeof option === "function"){
+        callback = option;
+        option = {};
+      }
+
+      if(option.encode !== false){
+        var url = state$$1.encode(option.param)
+        option.path = url;
+        this.nav(url, {silent: true, replace: option.replace});
+      }
+
+      this._go(state$$1, option, callback);
+
+      return this;
+    },
+    nav: function(url, options, callback){
+      if(typeof options === "function"){
+        callback = options;
+        options = {};
+      }
+      options = options || {};
+
+      options.path = url;
+
+      this.history.nav( url, _.extend({silent: true}, options));
+      if(!options.silent) { this._afterPathChange( _.cleanPath(url) , options , callback) }
+
+      return this;
+    },
+    decode: function(path){
+
+      var pathAndQuery = path.split("?");
+      var query = this._findQuery(pathAndQuery[1]);
+      path = pathAndQuery[0];
+      var state$$1 = this._findState(this, path);
+      if(state$$1) { _.extend(state$$1.param, query); }
+      return state$$1;
+
+    },
+    encode: function(stateName, param){
+      var state$$1 = this.state(stateName);
+      return state$$1? state$$1.encode(param) : '';
+    },
+    // notify specify state
+    // check the active statename whether to match the passed condition (stateName and param)
+    is: function(stateName, param, isStrict){
+      if(!stateName) { return false; }
+      var stateName = (stateName.name || stateName);
+      var current = this.current, currentName = current.name;
+      var matchPath = isStrict? currentName === stateName : (currentName + ".").indexOf(stateName + ".")===0;
+      return matchPath && (!param || _.eql(param, this.param)); 
+    },
+    // after pathchange changed
+    // @TODO: afterPathChange need based on decode
+    _afterPathChange: function(path, options ,callback){
+
+      this.emit("history:change", path);
+
+      var found = this.decode(path);
+
+      options = options || {};
+
+      options.path = path;
+
+      if(!found){
+        // loc.nav("$default", {silent: true})
+        return this._notfound(options);
+      }
+
+      options.param = found.param;
+
+      this._go( found, options, callback );
+    },
+    _notfound: function(options){
+
+      // var $notfound = this.state("$notfound");
+
+      // if( $notfound ) this._go($notfound, options);
+
+      return this.emit("notfound", options);
+    },
+    // goto the state with some option
+    _go: function(state$$1, option, callback){
+
+      var over;
+
+      // if(typeof state === "string") state = this.state(state);
+
+      // if(!state) return _.log("destination is not defined")
+
+      if(state$$1.hasNext && this.strict) { return this._notfound({name: state$$1.name}); }
+
+      // not touch the end in previous transtion
+
+      // if( this.pending ){
+      //   var pendingCurrent = this.pending.current;
+      //   this.pending.stop();
+      //   _.log("naving to [" + pendingCurrent.name + "] will be stoped, trying to ["+state.name+"] now");
+      // }
+      // if(this.active !== this.current){
+      //   // we need return
+      //   _.log("naving to [" + this.current.name + "] will be stoped, trying to ["+state.name+"] now");
+      //   this.current = this.active;
+      //   // back to before
+      // }
+      option.param = option.param || {};
+
+      var current = this.current,
+        baseState = this._findBase(current, state$$1),
+        prepath = this.path,
+        self = this;
+
+
+      if( typeof callback === "function" ) { this._stashCallback.push(callback); }
+      // if we done the navigating when start
+      function done(success){
+        over = true;
+        if( success !== false ) { self.emit("end"); }
+        self.pending = null;
+        self._popStash(option);
+      }
+      
+      option.previous = current;
+      option.current = state$$1;
+
+      if(current !== state$$1){
+        option.stop = function(){
+          done(false);
+          self.nav( prepath? prepath: "/", {silent:true});
+        }
+        self.emit("begin", option);
+
+      }
+      // if we stop it in 'begin' listener
+      if(over === true) { return; }
+
+      if(current !== state$$1){
+        // option as transition object.
+
+        option.phase = 'permission';
+        this._walk(current, state$$1, option, true , _.bind( function( notRejected ){
+
+          if( notRejected===false ){
+            // if reject in callForPermission, we will return to old 
+            prepath && this.nav( prepath, {silent: true})
+
+            done(false, 2)
+
+            return this.emit('abort', option);
+
+          } 
+
+          // stop previous pending.
+          if(this.pending) { this.pending.stop() } 
+          this.pending = option;
+          this.path = option.path;
+          this.current = option.current;
+          this.param = option.param;
+          this.previous = option.previous;
+          option.phase = 'navigation';
+          this._walk(current, state$$1, option, false, _.bind(function( notRejected ){
+
+            if( notRejected === false ){
+              this.current = this.active;
+              done(false)
+              return this.emit('abort', option);
+            }
+
+
+            this.active = option.current;
+
+            option.phase = 'completion';
+            return done()
+
+          }, this) )
+
+        }, this) )
+
+      }else{
+        self._checkQueryAndParam(baseState, option);
+        this.pending = null;
+        done();
+      }
+      
+    },
+    _popStash: function(option){
+      var this$1 = this;
+
+
+      var stash = this._stashCallback, len = stash.length;
+
+      this._stashCallback = [];
+
+      if(!len) { return; }
+
+      for(var i = 0; i < len; i++){
+        stash[i].call(this$1, option)
+      }
+    },
+
+    // the transition logic  Used in Both canLeave canEnter && leave enter LifeCycle
+
+    _walk: function(from, to, option, callForPermit , callback){
+
+      // nothing -> app.state
+      var parent = this._findBase(from , to);
+
+
+      option.basckward = true;
+      this._transit( from, parent, option, callForPermit , _.bind( function( notRejected ){
+
+        if( notRejected === false ) { return callback( notRejected ); }
+
+        // only actual transiton need update base state;
+        if( !callForPermit )  { this._checkQueryAndParam(parent, option) }
+
+        option.basckward = false;
+        this._transit( parent, to, option, callForPermit,  callback)
+
+      }, this) )
+
+    },
+
+    _transit: function(from, to, option, callForPermit, callback){
+      //  touch the ending
+      if( from === to ) { return callback(); }
+
+      var back = from.name.length > to.name.length;
+      var method = back? 'leave': 'enter';
+      var applied;
+
+      // use canEnter to detect permission
+      if( callForPermit) { method = 'can' + method.replace(/^\w/, function(a){ return a.toUpperCase() }); }
+
+      var loop = _.bind(function( notRejected ){
+
+
+        // stop transition or touch the end
+        if( applied === to || notRejected === false ) { return callback(notRejected); }
+
+        if( !applied ) {
+
+          applied = back? from : this._computeNext(from, to);
+
+        }else{
+
+          applied = this._computeNext(applied, to);
+        }
+
+        if( (back && applied === to) || !applied ){ return callback( notRejected ) }
+
+        this._moveOn( applied, method, option, loop );
+
+      }, this);
+
+      loop();
+    },
+
+    _moveOn: function( applied, method, option, callback){
+
+      var isDone = false;
+      var isPending = false;
+
+      option.async = function(){
+
+        isPending = true;
+
+        return done;
+      }
+
+      function done( notRejected ){
+        if( isDone ) { return; }
+        isPending = false;
+        isDone = true;
+        callback( notRejected );
+      }
+
+      
+
+      option.stop = function(){
+        done( false );
+      }
+
+
+      this.active = applied;
+      var retValue = applied[method]? applied[method]( option ): true;
+
+      if(method === 'enter') { applied.visited = true; }
+      // promise
+      // need breadk , if we call option.stop first;
+
+      if( _.isPromise(retValue) ){
+
+        return this._wrapPromise(retValue, done); 
+
+      }
+
+      // if haven't call option.async yet
+      if( !isPending ) { done( retValue ) }
+
+    },
+
+
+    _wrapPromise: function( promise, next ){
+
+      return promise.then( next, function(){next(false)}) ;
+
+    },
+
+    _computeNext: function( from, to ){
+
+      var fname = from.name;
+      var tname = to.name;
+
+      var tsplit = tname.split('.')
+      var fsplit = fname.split('.')
+
+      var tlen = tsplit.length;
+      var flen = fsplit.length;
+
+      if(fname === '') { flen = 0; }
+      if(tname === '') { tlen = 0; }
+
+      if( flen < tlen ){
+        fsplit[flen] = tsplit[flen];
+      }else{
+        fsplit.pop();
+      }
+
+      return this.state(fsplit.join('.'))
+
+    },
+
+    _findQuery: function(querystr){
+
+      var queries = querystr && querystr.split("&"), query= {};
+      if(queries){
+        var len = queries.length;
+        var query = {};
+        for(var i =0; i< len; i++){
+          var tmp = queries[i].split("=");
+          query[tmp[0]] = tmp[1];
+        }
+      }
+      return query;
+
+    },
+    _findState: function(state$$1, path){
+      var this$1 = this;
+
+      var states = state$$1._states, found, param;
+
+      // leaf-state has the high priority upon branch-state
+      if(state$$1.hasNext){
+        for(var i in states) { if(states.hasOwnProperty(i)){
+          found = this$1._findState( states[i], path );
+          if( found ) { return found; }
+        } }
+      }
+      // in strict mode only leaf can be touched
+      // if all children is don. will try it self
+      param = state$$1.regexp && state$$1.decode(path);
+      if(param){
+        state$$1.param = param;
+        return state$$1;
+      }else{
+        return false;
+      }
+    },
+    // find the same branch;
+    _findBase: function(now, before){
+
+      if(!now || !before || now == this || before == this) { return this; }
+      var np = now, bp = before, tmp;
+      while(np && bp){
+        tmp = bp;
+        while(tmp){
+          if(np === tmp) { return tmp; }
+          tmp = tmp.parent;
+        }
+        np = np.parent;
+      }
+    },
+    // check the query and Param
+    _checkQueryAndParam: function(baseState, options){
+
+      var from = baseState;
+      while( from !== this ){
+        from.update && from.update(options);
+        from = from.parent;
+      }
+
+    }
+
+}, true)
+
+
+
+var stateman = StateMan$1;
+
+var StateMan = stateman;
+StateMan.Histery = histery;
+StateMan.util = util;
+StateMan.State = state;
+
+var index = StateMan;
+
+// import CircularJSON from '../utils/circular-json';
+
+var view = function (Regular) {
+	var RouterView = Regular.extend( {
+		name: 'router-view',
+		template: "\n\t\t\t<i ref=\"v\"></i>\n\t\t",
+		config: function config() {
+			this._commentInserted = false;
+
+			var $router = this.$router;
+			var name = this.data.name || 'default';
+
+			$router.emit( 'add-router-view', {
+				phase: this.$root.__phase__,
+				key: name,
+				value: this
+			} );
+
+			// console.log( '>', name, CircularJSON.parse( CircularJSON.stringify( $router.current ) ) );
+
+			this.$mute();
+		},
+		init: function init() {
+			if( !this._comment ) {
+				this._comment = document.createComment( 'router-view' );
+			}
+		},
+		clear: function clear() {
+			if( this._prevcomponent ) {
+				this._prevcomponent.$inject( false );
+				this._prevcomponent.destroy();
+			}
+		},
+		render: function render( component ) {
+			var comment = this._comment;
+			if ( !this._commentInserted ) {
+				Regular.dom.inject( comment, this.$refs.v, 'after' );
+				this._commentInserted = true;
+			}
+
+			if ( this.$refs.v && this.$refs.v.parentNode ) {
+				this.$refs.v.parentNode.removeChild( this.$refs.v );
+				delete this.$refs.v;
+			}
+
+			if ( !component ) {
+				// this.clear();
+				return;
+			}
+			if ( comment.parentNode ) {
+				component.$inject( comment, 'after' );
+			}
+
+			this._prevcomponent = component;
+		}
+	} );
+}
+
+var link = function (Regular) {
+	Regular.extend({
+		name: 'router-link',
+		template: "\n\t\t\t<a href=\"{ to }\">{#inc this.$body}</a>\n\t\t"
+	});
+}
+
+function each( obj, fn ) {
+	var keys = Object.keys( obj );
+	for ( var i = 0, len = keys.length; i < len; i++ ) {
+		var key = keys[ i ];
+		fn( obj[ key ], key, obj );
+	}
+}
+
+var id = 0;
+function walk( obj, fn, name ) {
+	each( obj, function (v) {
+		var currentName = v.name || ("annoymous_" + (id++));
+		var path = name ? (name + "." + currentName) : currentName;
+		fn( v, path );
+		if ( v.children ) {
+			walk( v.children, fn, path );
+		}
+	} );
+}
+
+var checkPurview = function ( e, cmd, components, cb ) {
+	var done = e.async();
+	var current = e.current;
+	var go = e.go;
+
+	var len = Object.keys( components ).length;
+
+	function next() {
+		len--;
+
+		if( len === 0 ) {
+			done();
+			cb && cb();
+		}
+	}
+
+	for ( var i in components ) {
+		var component = components[ i ];
+		var canTransition = component.route && component.route[ cmd ];
+		if ( !canTransition ) {
+			next();
+		} else {
+			canTransition( {
+				route: current,
+				redirect: go,
+				next: next
+			} );
+		}
+	}
+};
+
+var Regular;
+
+var Router = function Router( options ) {
+	// directly call
+	if ( !( this instanceof Router ) ) {
+		Regular = options;
+		return;
+	}
+
+	// new
+	this._options = options;
+};
+Router.prototype.start = function start ( selector ) {
+	var rootNode =
+		( selector && document.querySelector( selector ) ) ||
+		document.body;
+
+	// make stateman avaiable for all Regular instances
+	var stateman = new index();
+	Regular.implement({
+		$router: stateman
+	});
+
+	// register helper components
+	Regular.use( view );
+	Regular.use( link );
+
+	// get routes from options.routes
+	var ref = this._options;
+		var routes = ref.routes;
+
+	// flat
+	var routeMap = {};
+	walk( routes, function( v, name ) {
+		if ( !~name.indexOf( '.' ) ) {
+			v.isRootRoute = true;
+		}
+		routeMap[ name ] = v;
+	} );
+
+	var routerViewStack = {};
+	stateman.on( {
+		'add-router-view': function( ref ) {
+				var phase = ref.phase;
+				var key = ref.key;
+				var value = ref.value;
+
+			routerViewStack[ phase ] = routerViewStack[ phase ] || {};
+			routerViewStack[ phase ][ key ] = value;
+		},
+		// 'purge-router-view': function( { phase } ) {
+		// routerViewStack[ phase ] = {};
+		// }
+	} );
+
+	// transform routes
+	var transformedRoutes = {};
+	var loop = function ( name ) {
+		var route = routeMap[ name ];
+		var parentName = name.split( '.' ).slice( 0, -1 ).join( '.' );
+		var component = route.component;
+		var components = route.components || {};
+		var CtorMap = {};
+
+		// combine
+		if ( !components[ 'default' ] && component ) {
+			components[ 'default' ] = component;
+		}
+
+		transformedRoutes[ name ] = {
+			url: route.url,
+			update: function update( e ) {
+				// reuse, do nothing
+			},
+			enter: function enter( e ) {
+				console.log( '@@route', name, 'enter' );
+				var current = e.current;
+
+				var instanceMap = {};
+
+				// initialize component ctors
+				CtorMap[ name ] = {};
+
+				for ( var i in components ) {
+					var cp = components[ i ];
+					CtorMap[ name ][ i ] = Regular.extend( cp );
+				}
+
+				// get instances, and routerViews will be mounted
+				for ( var i$1 in CtorMap[ name ] ) {
+					instanceMap[ i$1 ] = new CtorMap[ name ][ i$1 ]({
+						__phase__: name,
+						__view__: i$1
+					});
+				}
+
+				var routerViews = routerViewStack[ parentName ];
+
+				// render router-view
+				if ( routerViews ) {
+					for ( var i$2 in routerViews ) {
+						var routerView = routerViews[ i$2 ];
+						routerView.render( instanceMap[ i$2 ] );
+					}
+				}
+
+				if ( route.isRootRoute ) {
+					instanceMap[ 'default' ] && instanceMap[ 'default' ].$inject( rootNode );
+				}
+			},
+			canEnter: function canEnter( e ) {
+				checkPurview( e, 'canEnter', components );
+			},
+			canLeave: function canLeave( e ) {
+				checkPurview( e, 'canLeave', components );
+			},
+			leave: function leave( e ) {
+				console.log( '@@route', name, 'leave' );
+
+				var current = e.current;
+				var routerViews = routerViewStack[ parentName ];
+
+				// clean router-view
+				if ( routerViews ) {
+					for ( var i in routerViews ) {
+						var routerView = routerViews[ i ];
+						routerView.clear();
+					}
+				}
+			}
+		};
+	};
+
+		for ( var name in routeMap ) { loop( name ); }
+
+	stateman.state( transformedRoutes );
+
+	stateman.start( {
+		prefix: '!'
+	} );
+};
+
+return Router;
+
+})));
+});
+
+var RouterManager = function RouterManager( app ) {
+	var this$1 = this;
+
+	var Base = app._Base;
+	Base.use( regularRouter );
+	app.once( 'before-start', function () {
+		var getters = app._getters;
+		var options = this$1._options || {};
+		var routes = options.routes;
+		walkRoutes( routes, function (route) {
+			var components = route.components || {};
+			if ( route.component ) {
+				components[ 'default' ] = route.component;
+			}
+			for ( var i in components ) {
+				var Component = components[ i ];
+				var computed = Component.computed;
+				var cps = Component.components;
+				var loop = function ( j ) {
+					var c = computed[ j ];
+					if ( typeof c === 'string' ) {
+						if ( getters[ c ] ) {
+							computed[ j ] = function () { return getters[ c ]( app._store.getState() ); };
+						} else {
+							delete computed[ j ];
+						}
+					}
+				};
+
+				for ( var j in computed ) loop( j );
+			}
+		} );
+	} );
+};
+RouterManager.prototype.set = function set ( options ) {
+	this._options = options;
+};
+RouterManager.prototype.start = function start () {
+	var router = new regularRouter( this._options );
+	router.start();
+};
+
+function walkRoutes( routes, fn ) {
+	for ( var i = 0, len = routes.length; i < len; i++ ) {
+		var route = routes[ i ];
+		fn( route );
+		if ( route.children ) {
+			walkRoutes( route.children, fn );
+		}
+	}
+}
+
+var App = (function (EventEmitter) {
+	function App() {
+		this._isRunning = false;
+		this._store = new Store();
+		this._Base = index$1.extend();
+		this.managers = {
+			plugin: new PulginManager( this ),
+			view: new ViewManager( this ),
+			router: new RouterManager( this )
+		};
+	}
+
+	if ( EventEmitter ) App.__proto__ = EventEmitter;
+	App.prototype = Object.create( EventEmitter && EventEmitter.prototype );
+	App.prototype.constructor = App;
+	App.prototype.use = function use ( plugin ) {
+		this.managers.plugin.register( plugin );
+	};
+	App.prototype.model = function model ( ref ) {
 		if ( ref === void 0 ) ref = {};
 		var name = ref.name;
 		var state = ref.state; if ( state === void 0 ) state = {};
 		var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
 
-	if( !name ) {
-		throw new Error( 'model must have a name' );
-	}
-
-	var model = new Model( { store: this._store, name: name, state: state, reducers: reducers } );
-
-	this._store.add( model );
-
-	return model;
-};
-App.prototype.view = function view ( options ) {
-	this._viewConfigs.push( options );
-	// TODO: return Component Constructor, used in components later to find registered Component
-};
-App.prototype.actions = function actions ( actions ) {
-	this._store.registerActions( actions );
-};
-App.prototype.getters = function getters ( getters ) {
-		if ( getters === void 0 ) getters = {};
-
-	if( this._getters ) {
-		throw new Error( 'getters can only be called one time' );
-	}
-	this._getters = getters;
-};
-App.prototype.router = function router () {
-
-};
-App.prototype.start = function start ( selector ) {
-		var this$1 = this;
-
-	var plugins = this._plugins;
-	var store = this._store;
-	var getters = this._getters;
-	var viewConfigs = this._viewConfigs;
-
-	var i, j, len;
-
-	// register plugins
-	for ( i = 0, len = plugins.length; i < len; i++ ) {
-		var plugin = plugins[ i ];
-		plugin( store );
-	}
-
-	// setup views, now getters are newest
-	var props = {};
-	var computedProps = {};
-	for ( i = 0, len = viewConfigs.length; i < len; i++ ) {
-		var config = viewConfigs[ i ];
-		var models = config.models;
-			var computed = config.computed;
-			var template = config.template;
-
-		computed = computed || {};
-
-		for ( j in computed ) {
-			var key = computed[ j ];
-			var getter = this$1._getters[ key ];
-			if ( typeof key === 'string' && getter ) {
-				props[ j ] = getter;
-			} else {
-				computedProps[ j ] = key;
-			}
+		if( !name ) {
+			throw new Error( 'please name your model' );
 		}
 
-		this$1._views.push(
-			new View( Object.assign(
-				config,
-				{
-					store: store,
-					models: models,
-					props: props,
-					computed: computedProps,
-					template: template
-				}
-			) )
-		);
-	}
+		var model = new Model( { state: state, reducers: reducers } );
+		this._store.registerModel( name, model );
 
-	for ( i = 0, len = this._views.length; i < len; i++ ) {
-		this$1._views[ i ].inject( document.querySelector( selector ), 'bottom' );
-	}
-};
+		return model;
+	};
+	App.prototype.actions = function actions ( actions ) {
+		this._store.registerActions( actions );
+	};
+	App.prototype.getters = function getters ( getters ) {
+		if ( getters === void 0 ) getters = {};
+
+		if( this._getters ) {
+			throw new Error( 'getters can only be called one time' );
+		}
+		this._getters = getters;
+	};
+	App.prototype.router = function router ( options ) {
+		this.managers.router.set( options );
+	};
+	App.prototype.start = function start ( selector ) {
+		if ( this._isRunning ) {
+			return;
+		}
+
+		this._isRunning = true;
+
+		this.emit( 'before-start' );
+		this.managers.router.start();
+		this.emit( 'after-start' );
+	};
+
+	return App;
+}(eventemitter2));
 
 var index = function() {
 	return new App();

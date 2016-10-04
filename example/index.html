@@ -60,21 +60,28 @@
 				}
 			} );
 
-			app.view( {
-				name: 'Btn',
+			const Btn = {
 				template: `
 					<button on-click="{ this.onClick() }">{#inc this.$body}</button>
 				`,
 				onClick() {
 					console.log( 'clicked' );
 				}
-			} );
+			};
 
-			app.view( {
-				// models: [ 'counter' ],
-				// components: {},
+			const Counter = {
+				models: [ 'counter' ],
+				components: {
+					Btn
+				},
 				config() {
 					this.data.localState = 1;
+				},
+				route: {
+					canEnter( { next } ) {
+						console.log( 'can' );
+						next();
+					}
 				},
 				computed: {
 					c: 'ccc'
@@ -90,21 +97,15 @@
 					<button on-click="{ this.dispatch( 'minusSync' ) }">-</button>
 					<button on-click="{ this.dispatch( 'addAsync', 9 ) }">async add</button>
 				`
-			} );
+			};
 
 			app.router( {
-				'app': {
-					url: '',
-					component: Layout
-				},
-				'app.home': {
-					url: 'home',
-					component: Home
-				},
-				'app.settings': {
-					url: 'settings',
-					component: Settings
-				}
+				routes: [
+					{
+						url: '/',
+						component: Counter
+					}
+				]
 			} );
 
 			app.start( '#app' );

@@ -1,36 +1,34 @@
+import Regular from 'regularjs';
+import EventEmitter from 'eventemitter2';
 import Store from './store';
 import Model from './model';
-import View from './view';
+import PluginManager from './plugin';
+import ViewManager from './view';
+import RouterManager from './router';
 
-class App {
+class App extends EventEmitter {
 	constructor() {
-		this._viewConfigs = [];
-		this._views = [];
+		this._isRunning = false;
 		this._store = new Store();
-		this._plugins = [];
+		this._Base = Regular.extend();
+		this.managers = {
+			plugin: new PluginManager( this ),
+			view: new ViewManager( this ),
+			router: new RouterManager( this )
+		};
 	}
 	use( plugin ) {
-		// to get the correct store._state, execute all plugins until app.start is called
-		this._plugins.push( plugin );
+		this.managers.plugin.register( plugin );
 	}
-	model( {
-		name,
-		state = {},
-		reducers = {}
-	} = {} ) {
+	model( { name, state = {}, reducers = {} } = {} ) {
 		if( !name ) {
-			throw new Error( 'model must have a name' );
+			throw new Error( 'please name your model' );
 		}
 
-		const model = new Model( { store: this._store, name, state, reducers } );
-
-		this._store.add( model );
+		const model = new Model( { state, reducers } );
+		this._store.registerModel( name, model );
 
 		return model;
-	}
-	view( options ) {
-		this._viewConfigs.push( options );
-		// TODO: return Component Constructor, used in components later to find registered Component
 	}
 	actions( actions ) {
 		this._store.registerActions( actions );
@@ -41,59 +39,19 @@ class App {
 		}
 		this._getters = getters;
 	}
-	router() {
-
+	router( options ) {
+		this.managers.router.set( options );
 	}
 	start( selector ) {
-		const plugins = this._plugins;
-		const store = this._store;
-		const getters = this._getters;
-		const viewConfigs = this._viewConfigs;
-
-		let i, j, len;
-
-		// register plugins
-		for ( i = 0, len = plugins.length; i < len; i++ ) {
-			const plugin = plugins[ i ];
-			plugin( store );
+		if ( this._isRunning ) {
+			return;
 		}
 
-		// setup views, now getters are newest
-		let props = {};
-		let computedProps = {};
-		for ( i = 0, len = viewConfigs.length; i < len; i++ ) {
-			let config = viewConfigs[ i ];
-			let { models, computed, template } = config;
+		this._isRunning = true;
 
-			computed = computed || {};
-
-			for ( j in computed ) {
-				const key = computed[ j ];
-				const getter = this._getters[ key ];
-				if ( typeof key === 'string' && getter ) {
-					props[ j ] = getter;
-				} else {
-					computedProps[ j ] = key;
-				}
-			}
-
-			this._views.push(
-				new View( Object.assign(
-					config,
-					{
-						store,
-						models,
-						props,
-						computed: computedProps,
-						template
-					}
-				) )
-			);
-		}
-
-		for ( i = 0, len = this._views.length; i < len; i++ ) {
-			this._views[ i ].inject( document.querySelector( selector ), 'bottom' );
-		}
+		this.emit( 'before-start' );
+		this.managers.router.start();
+		this.emit( 'after-start' );
 	}
 }
 
