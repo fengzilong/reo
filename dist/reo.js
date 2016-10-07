@@ -7361,6 +7361,17 @@ var link = function (Regular) {
 	});
 }
 
+// maybe Regular or extended from Regular, either is ok
+var _Component;
+
+var setCtor = function (Component) {
+	_Component = Component;
+};
+
+var getCtor = function () {
+	return _Component;
+};
+
 function each( obj, fn ) {
 	var keys = Object.keys( obj );
 	for ( var i = 0, len = keys.length; i < len; i++ ) {
@@ -7379,6 +7390,79 @@ function walk( obj, fn, name ) {
 			walk( v.children, fn, path );
 		}
 	} );
+}
+
+function digestComponentDeps( routes ) {
+	var Component = getCtor();
+	var dirty = false;
+	var ttl = 20;
+
+	// handle components deps
+	function walkComponents( extendOptions ) {
+		// first and no deps
+		if ( !extendOptions.components && !extendOptions._Ctor ) {
+			extendOptions._Ctor = Component.extend( extendOptions );
+			return;
+		}
+
+		var cps = extendOptions.components;
+
+		// deps are ready
+		var isReady = true;
+		for ( var i in cps ) {
+			if ( !cps[ i ]._Ctor ) {
+				isReady = false;
+				break;
+			}
+		}
+
+		if ( isReady ) {
+			var Ctor = Component.extend( extendOptions );
+			// register component on Ctor
+			for ( var i$1 in cps ) {
+				Ctor.component( i$1, cps[ i$1 ]._Ctor )
+			}
+			extendOptions._Ctor = Ctor;
+			return;
+		}
+
+		// if exists deps, and deps are not ready, mark as dirty, wait for next digest
+		dirty = true;
+
+		for ( var i$2 in cps ) {
+			walkComponents( cps[ i$2 ] );
+		}
+	}
+
+	function digestOne() {
+		// reset
+		dirty = false;
+
+		walk( routes, function( route ) {
+			var components = route.components || {};
+			// combine
+			if ( route.component ) {
+				components[ 'default' ] = route.component;
+			}
+			for ( var i in components ) {
+				walkComponents( components[ i ] );
+			}
+		} );
+
+		ttl--;
+
+		if ( !ttl ) {
+			// error
+			throw new Error( "components dependencies parse failed" );
+		}
+
+		if ( dirty && ttl ) {
+			// next digest
+			digestOne();
+		}
+	}
+
+	digestOne();
 }
 
 var checkPurview = function ( e, cmd, components, cb ) {
@@ -7412,12 +7496,10 @@ var checkPurview = function ( e, cmd, components, cb ) {
 	}
 };
 
-var Regular;
-
 var Router = function Router( options ) {
 	// directly call
 	if ( !( this instanceof Router ) ) {
-		Regular = options;
+		setCtor( options );
 		return;
 	}
 
@@ -7428,16 +7510,21 @@ Router.prototype.start = function start ( selector ) {
 	var rootNode =
 		( selector && document.querySelector( selector ) ) ||
 		document.body;
+	var Component = getCtor();
+
+	if ( !Component ) {
+		throw new Error( 'regular-router not initialized yet' );
+	}
 
 	// make stateman avaiable for all Regular instances
 	var stateman = new index();
-	Regular.implement({
+	Component.implement({
 		$router: stateman
 	});
 
 	// register helper components
-	Regular.use( view );
-	Regular.use( link );
+	Component.use( view );
+	Component.use( link );
 
 	// get routes from options.routes
 	var ref = this._options;
@@ -7445,12 +7532,15 @@ Router.prototype.start = function start ( selector ) {
 
 	// flat
 	var routeMap = {};
-	walk( routes, function( v, name ) {
+	walk( routes, function( route, name ) {
 		if ( !~name.indexOf( '.' ) ) {
-			v.isRootRoute = true;
+			route.isRootRoute = true;
 		}
-		routeMap[ name ] = v;
+		routeMap[ name ] = route;
 	} );
+
+	// digest components dependencies
+	digestComponentDeps( routes );
 
 	var routerViewStack = {};
 	stateman.on( {
@@ -7497,7 +7587,7 @@ Router.prototype.start = function start ( selector ) {
 
 				for ( var i in components ) {
 					var cp = components[ i ];
-					CtorMap[ name ][ i ] = Regular.extend( cp );
+					CtorMap[ name ][ i ] = cp._Ctor;
 				}
 
 				// get instances, and routerViews will be mounted
