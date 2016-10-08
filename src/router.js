@@ -2,6 +2,8 @@ import Router from 'regular-router';
 
 export default class RouterManager {
 	constructor( app ) {
+		this._app = app;
+		
 		const Base = app._Base;
 		Base.use( Router );
 		app.once( 'before-start', () => {
@@ -37,6 +39,7 @@ export default class RouterManager {
 	}
 	start() {
 		const router = new Router( this._options );
+		this._app.$router = router;
 		router.start();
 	}
 }

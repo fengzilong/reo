@@ -9,7 +9,7 @@ import RouterManager from './router';
 class App extends EventEmitter {
 	constructor() {
 		this._isRunning = false;
-		this._store = new Store();
+		this.$store = this._store = new Store();
 		this._Base = Regular.extend();
 		this.managers = {
 			plugin: new PluginManager( this ),

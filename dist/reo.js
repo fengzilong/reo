@@ -7652,6 +7652,8 @@ return Router;
 var RouterManager = function RouterManager( app ) {
 	var this$1 = this;
 
+	this._app = app;
+		
 	var Base = app._Base;
 	Base.use( regularRouter );
 	app.once( 'before-start', function () {
@@ -7689,6 +7691,7 @@ RouterManager.prototype.set = function set ( options ) {
 };
 RouterManager.prototype.start = function start () {
 	var router = new regularRouter( this._options );
+	this._app.$router = router;
 	router.start();
 };
 
@@ -7705,7 +7708,7 @@ function walkRoutes( routes, fn ) {
 var App = (function (EventEmitter) {
 	function App() {
 		this._isRunning = false;
-		this._store = new Store();
+		this.$store = this._store = new Store();
 		this._Base = index$1.extend();
 		this.managers = {
 			plugin: new PulginManager( this ),
