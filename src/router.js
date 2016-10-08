@@ -5,6 +5,7 @@ export default class RouterManager {
 		const Base = app._Base;
 		Base.use( Router );
 		app.once( 'before-start', () => {
+			const state = app._store.getState();
 			const getters = app._getters;
 			const options = this._options || {};
 			const { routes } = options;
@@ -21,7 +22,7 @@ export default class RouterManager {
 						const c = computed[ j ];
 						if ( typeof c === 'string' ) {
 							if ( getters[ c ] ) {
-								computed[ j ] = () => getters[ c ]( app._store.getState() );
+								computed[ j ] = () => getters[ c ]( state );
 							} else {
 								delete computed[ j ];
 							}

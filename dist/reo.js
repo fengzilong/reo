@@ -7655,6 +7655,7 @@ var RouterManager = function RouterManager( app ) {
 	var Base = app._Base;
 	Base.use( regularRouter );
 	app.once( 'before-start', function () {
+		var state = app._store.getState();
 		var getters = app._getters;
 		var options = this$1._options || {};
 		var routes = options.routes;
@@ -7671,7 +7672,7 @@ var RouterManager = function RouterManager( app ) {
 					var c = computed[ j ];
 					if ( typeof c === 'string' ) {
 						if ( getters[ c ] ) {
-							computed[ j ] = function () { return getters[ c ]( app._store.getState() ); };
+							computed[ j ] = function () { return getters[ c ]( state ); };
 						} else {
 							delete computed[ j ];
 						}
