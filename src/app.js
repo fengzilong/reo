@@ -5,6 +5,7 @@ import Model from './model';
 import PluginManager from './plugin';
 import ViewManager from './view';
 import RouterManager from './router';
+import devtoolsPlugin from './plugins/devtools';
 
 class App extends EventEmitter {
 	constructor() {
@@ -16,6 +17,7 @@ class App extends EventEmitter {
 			view: new ViewManager( this ),
 			router: new RouterManager( this )
 		};
+		this.use( devtoolsPlugin() );
 	}
 	use( plugin ) {
 		this.managers.plugin.register( plugin );

@@ -7,7 +7,13 @@ export default class ViewManager {
 				$config() {
 					// auto-subscribe
 					const models = this.models;
-					store.subscribe( this.$update.bind( this ), models );
+
+					const update = () => {
+						this.$update();
+					};
+					update._isFromView = true;
+
+					store.subscribe( update, models );
 				}
 			},
 			dispatch( ...args ) {

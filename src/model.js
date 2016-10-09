@@ -6,13 +6,16 @@ class Model {
 		this._state = state;
 		this._reducers = reducers;
 		this._subscribers = [];
-		this._dispatching = false;
+		this._committing = false;
 	}
 	get state() {
 		return this._state;
 	}
 	set state( v ) {
 		throw new Error( 'cannot replace state directly' );
+	}
+	replaceState( nextState ) {
+		this._state = nextState;
 	}
 	watch() {
 
@@ -21,7 +24,7 @@ class Model {
 		this._subscribers.push( fn );
 	}
 	commit( type, payload ) {
-		if( this._dispatching ) {
+		if( this._committing ) {
 			return;
 		}
 
@@ -36,9 +39,9 @@ class Model {
 		for ( let i in reducers ) {
 			if( type === i ) {
 				let reducer = reducers[ i ];
-				this._dispatching = true;
+				this._committing = true;
 				reducer( state, payload );
-				this._dispatching = false;
+				this._committing = false;
 				// notify subscribers
 				this.notify( type, payload );
 				break;

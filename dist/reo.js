@@ -6062,6 +6062,17 @@ var Store = function Store() {
 	this._state = {};
 	this._subscribers = {};
 	this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
+	this.replacing = false;
+};
+Store.prototype.replaceState = function replaceState ( nextState ) {
+	var models = this._models;
+	this._state = nextState;
+	for ( var i in nextState ) {
+		if ( typeof models[ i ] !== 'undefined' ) {
+			models[ i ].replaceState( nextState[ i ] );
+		}
+	}
+	this.notifyViews();
 };
 Store.prototype.getState = function getState () {
 	return this._state;
@@ -6113,6 +6124,21 @@ Store.prototype.notify = function notify ( name, type, payload ) {
 		cb( { type: (name + "/" + type), payload: payload }, this$1._state );
 	}
 };
+Store.prototype.notifyViews = function notifyViews () {
+		var this$1 = this;
+
+	var cbs = [];
+	for ( var i in this._subscribers ) {
+		cbs = cbs.concat( this$1._subscribers[ i ] );
+	}
+	var state = this._state;
+	for ( var i$1 = 0, len = cbs.length; i$1 < len; i$1++ ) {
+		var cb = cbs[ i$1 ];
+		if ( cb._isFromView ) {
+			cb();
+		}
+	}
+};
 Store.prototype.subscribe = function subscribe ( fn, names ) {
 		var this$1 = this;
 
@@ -6139,7 +6165,7 @@ var Model = function Model( ref ) {
 	this._state = state;
 	this._reducers = reducers;
 	this._subscribers = [];
-	this._dispatching = false;
+	this._committing = false;
 };
 
 var prototypeAccessors = { state: {} };
@@ -6148,6 +6174,9 @@ prototypeAccessors.state.get = function () {
 };
 prototypeAccessors.state.set = function ( v ) {
 	throw new Error( 'cannot replace state directly' );
+};
+Model.prototype.replaceState = function replaceState ( nextState ) {
+	this._state = nextState;
 };
 Model.prototype.watch = function watch () {
 
@@ -6158,7 +6187,7 @@ Model.prototype.subscribe = function subscribe ( fn ) {
 Model.prototype.commit = function commit ( type, payload ) {
 		var this$1 = this;
 
-	if( this._dispatching ) {
+	if( this._committing ) {
 		return;
 	}
 
@@ -6173,9 +6202,9 @@ Model.prototype.commit = function commit ( type, payload ) {
 	for ( var i in reducers ) {
 		if( type === i ) {
 			var reducer = reducers[ i ];
-			this$1._dispatching = true;
+			this$1._committing = true;
 			reducer( state, payload );
-			this$1._dispatching = false;
+			this$1._committing = false;
 			// notify subscribers
 			this$1.notify( type, payload );
 			break;
@@ -6212,9 +6241,17 @@ var ViewManager = function ViewManager( app ) {
 	Base.implement( {
 		events: {
 			$config: function $config() {
+				var this$1 = this;
+
 				// auto-subscribe
 				var models = this.models;
-				store.subscribe( this.$update.bind( this ), models );
+
+				var update = function () {
+					this$1.$update();
+				};
+				update._isFromView = true;
+
+				store.subscribe( update, models );
 			}
 		},
 		dispatch: function dispatch() {
@@ -7653,11 +7690,10 @@ var RouterManager = function RouterManager( app ) {
 	var this$1 = this;
 
 	this._app = app;
-		
+
 	var Base = app._Base;
 	Base.use( regularRouter );
 	app.once( 'before-start', function () {
-		var state = app._store.getState();
 		var getters = app._getters;
 		var options = this$1._options || {};
 		var routes = options.routes;
@@ -7674,7 +7710,12 @@ var RouterManager = function RouterManager( app ) {
 					var c = computed[ j ];
 					if ( typeof c === 'string' ) {
 						if ( getters[ c ] ) {
-							computed[ j ] = function () { return getters[ c ]( state ); };
+							computed[ j ] = function () {
+								// replaceState will replace state reference
+								// so get state in realtime when computes
+								var state = app._store.getState();
+								return getters[ c ]( state )
+							};
 						} else {
 							delete computed[ j ];
 						}
@@ -7705,6 +7746,27 @@ function walkRoutes( routes, fn ) {
 	}
 }
 
+// Credits: vue/vuex
+
+var devtoolsPlugin = function (options) { return function (store) {
+	var devtools = window.__REO_DEVTOOLS_HOOK__;
+
+	if ( !devtools ) {
+		return;
+	}
+
+	store._devtools = devtools;
+
+	devtools.emit( 'reo:init', store );
+	devtools.on( 'reo:travel-to-state', function (state) {
+		store.replaceState( state );
+	} );
+
+	store.subscribe( function ( action, state ) {
+		devtools.emit( 'reo:reducer', action, state );
+	} );
+}; }
+
 var App = (function (EventEmitter) {
 	function App() {
 		this._isRunning = false;
@@ -7715,6 +7777,7 @@ var App = (function (EventEmitter) {
 			view: new ViewManager( this ),
 			router: new RouterManager( this )
 		};
+		this.use( devtoolsPlugin() );
 	}
 
 	if ( EventEmitter ) App.__proto__ = EventEmitter;

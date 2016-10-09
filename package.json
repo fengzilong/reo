@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "onchange \"src\" -i -v -- npm run build",
-    "build": "bubleup ./src/index.js -d dist --format umd --name reo && bubleup ./src/plugins/logger.js -d ./ --format umd --name logger"
+    "build": "npm run build:reo && npm run build:logger",
+    "build:reo": "bubleup ./src/index.js -d dist --format umd --name reo",
+    "build:logger": "bubleup ./src/plugins/logger.js -d ./ --format umd --name logger"
   },
   "repository": {
     "type": "git",

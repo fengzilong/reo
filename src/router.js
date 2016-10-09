@@ -3,11 +3,10 @@ import Router from 'regular-router';
 export default class RouterManager {
 	constructor( app ) {
 		this._app = app;
-		
+
 		const Base = app._Base;
 		Base.use( Router );
 		app.once( 'before-start', () => {
-			const state = app._store.getState();
 			const getters = app._getters;
 			const options = this._options || {};
 			const { routes } = options;
@@ -24,7 +23,12 @@ export default class RouterManager {
 						const c = computed[ j ];
 						if ( typeof c === 'string' ) {
 							if ( getters[ c ] ) {
-								computed[ j ] = () => getters[ c ]( state );
+								computed[ j ] = () => {
+									// replaceState will replace state reference
+									// so get state in realtime when computes
+									const state = app._store.getState();
+									return getters[ c ]( state )
+								};
 							} else {
 								delete computed[ j ];
 							}

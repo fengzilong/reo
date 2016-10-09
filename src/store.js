@@ -7,6 +7,17 @@ class Store {
 		this._state = {};
 		this._subscribers = {};
 		this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
+		this.replacing = false;
+	}
+	replaceState( nextState ) {
+		const models = this._models;
+		this._state = nextState;
+		for ( let i in nextState ) {
+			if ( typeof models[ i ] !== 'undefined' ) {
+				models[ i ].replaceState( nextState[ i ] );
+			}
+		}
+		this.notifyViews();
 	}
 	getState() {
 		return this._state;
@@ -51,6 +62,19 @@ class Store {
 		for ( let i = 0, len = cbs.length; i < len; i++ ) {
 			const cb = cbs[ i ];
 			cb( { type: `${name}/${type}`, payload }, this._state );
+		}
+	}
+	notifyViews() {
+		let cbs = [];
+		for ( let i in this._subscribers ) {
+			cbs = cbs.concat( this._subscribers[ i ] );
+		}
+		const state = this._state;
+		for ( let i = 0, len = cbs.length; i < len; i++ ) {
+			const cb = cbs[ i ];
+			if ( cb._isFromView ) {
+				cb();
+			}
 		}
 	}
 	subscribe( fn, names ) {
