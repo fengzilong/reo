@@ -10,28 +10,20 @@ export default class RouterManager {
 			const getters = app._getters;
 			const options = this._options || {};
 			const { routes } = options;
-			walkRoutes( routes, route => {
-				const components = route.components || {};
-				if ( route.component ) {
-					components[ 'default' ] = route.component;
-				}
-				for ( let i in components ) {
-					const Component = components[ i ];
-					const computed = Component.computed;
-					const cps = Component.components;
-					for ( let j in computed ) {
-						const c = computed[ j ];
-						if ( typeof c === 'string' ) {
-							if ( getters[ c ] ) {
-								computed[ j ] = () => {
-									// replaceState will replace state reference
-									// so get state in realtime when computes
-									const state = app._store.getState();
-									return getters[ c ]( state )
-								};
-							} else {
-								delete computed[ j ];
-							}
+			walk( routes, component => {
+				const computed = component.computed;
+				for ( let i in computed ) {
+					const c = computed[ i ];
+					if ( typeof c === 'string' ) {
+						if ( getters[ c ] ) {
+							computed[ i ] = () => {
+								// replaceState will replace state reference
+								// so get state in realtime when computes
+								const state = app._store.getState();
+								return getters[ c ]( state )
+							};
+						} else {
+							delete computed[ i ];
 						}
 					}
 				}
@@ -48,12 +40,27 @@ export default class RouterManager {
 	}
 }
 
-function walkRoutes( routes, fn ) {
+function walk( routes, fn ) {
 	for ( let i = 0, len = routes.length; i < len; i++ ) {
 		const route = routes[ i ];
-		fn( route );
+
+		const components = route.components || {};
+		if ( route.component ) {
+			components[ 'default' ] = route.component;
+		}
+		walkComponents( components, fn );
 		if ( route.children ) {
-			walkRoutes( route.children, fn );
+			walk( route.children, fn );
+		}
+	}
+}
+
+function walkComponents( components, fn ) {
+	for ( let i in components ) {
+		const component = components[ i ];
+		fn( component );
+		if ( component.components ) {
+			walkComponents( component.components, fn );
 		}
 	}
 }

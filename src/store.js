@@ -7,7 +7,6 @@ class Store {
 		this._state = {};
 		this._subscribers = {};
 		this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
-		this.replacing = false;
 	}
 	replaceState( nextState ) {
 		const models = this._models;

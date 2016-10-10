@@ -6062,7 +6062,6 @@ var Store = function Store() {
 	this._state = {};
 	this._subscribers = {};
 	this._subscribers[ ALWAYS_NOTIFY_KEY ] = [];
-	this.replacing = false;
 };
 Store.prototype.replaceState = function replaceState ( nextState ) {
 	var models = this._models;
@@ -7697,33 +7696,25 @@ var RouterManager = function RouterManager( app ) {
 		var getters = app._getters;
 		var options = this$1._options || {};
 		var routes = options.routes;
-		walkRoutes( routes, function (route) {
-			var components = route.components || {};
-			if ( route.component ) {
-				components[ 'default' ] = route.component;
-			}
-			for ( var i in components ) {
-				var Component = components[ i ];
-				var computed = Component.computed;
-				var cps = Component.components;
-				var loop = function ( j ) {
-					var c = computed[ j ];
-					if ( typeof c === 'string' ) {
-						if ( getters[ c ] ) {
-							computed[ j ] = function () {
-								// replaceState will replace state reference
-								// so get state in realtime when computes
-								var state = app._store.getState();
-								return getters[ c ]( state )
-							};
-						} else {
-							delete computed[ j ];
-						}
+		walk( routes, function (component) {
+			var computed = component.computed;
+			var loop = function ( i ) {
+				var c = computed[ i ];
+				if ( typeof c === 'string' ) {
+					if ( getters[ c ] ) {
+						computed[ i ] = function () {
+							// replaceState will replace state reference
+							// so get state in realtime when computes
+							var state = app._store.getState();
+							return getters[ c ]( state )
+						};
+					} else {
+						delete computed[ i ];
 					}
-				};
+				}
+			};
 
-				for ( var j in computed ) loop( j );
-			}
+			for ( var i in computed ) loop( i );
 		} );
 	} );
 };
@@ -7736,12 +7727,27 @@ RouterManager.prototype.start = function start () {
 	router.start();
 };
 
-function walkRoutes( routes, fn ) {
+function walk( routes, fn ) {
 	for ( var i = 0, len = routes.length; i < len; i++ ) {
 		var route = routes[ i ];
-		fn( route );
+
+		var components = route.components || {};
+		if ( route.component ) {
+			components[ 'default' ] = route.component;
+		}
+		walkComponents( components, fn );
 		if ( route.children ) {
-			walkRoutes( route.children, fn );
+			walk( route.children, fn );
+		}
+	}
+}
+
+function walkComponents( components, fn ) {
+	for ( var i in components ) {
+		var component = components[ i ];
+		fn( component );
+		if ( component.components ) {
+			walkComponents( component.components, fn );
 		}
 	}
 }
