@@ -52,7 +52,7 @@ class App extends EventEmitter {
 		this._isRunning = true;
 
 		this.emit( 'before-start' );
-		this.managers.router.start();
+		this.managers.router.start( selector );
 		this.emit( 'after-start' );
 	}
 }
