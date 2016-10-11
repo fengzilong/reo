@@ -7728,10 +7728,10 @@ var RouterManager = function RouterManager( app ) {
 RouterManager.prototype.set = function set ( options ) {
 	this._options = options;
 };
-RouterManager.prototype.start = function start () {
+RouterManager.prototype.start = function start ( selector ) {
 	var router = new regularRouter( this._options );
 	this._app.$router = router;
-	router.start();
+	router.start( selector );
 };
 
 function walk( routes, fn ) {

@@ -33,10 +33,10 @@ export default class RouterManager {
 	set( options ) {
 		this._options = options;
 	}
-	start() {
+	start( selector ) {
 		const router = new Router( this._options );
 		this._app.$router = router;
-		router.start();
+		router.start( selector );
 	}
 }
 
