@@ -1,7 +1,8 @@
 const ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
 
 class Store {
-	constructor() {
+	constructor( app ) {
+		this._app = app;
 		this._models = {};
 		this._modelArray = [];
 		this._state = {};
@@ -37,6 +38,11 @@ class Store {
 		}
 		this._actions = actions;
 	}
+	_get( getterKey ) {
+		return this._app._getters &&
+			this._app._getters[ getterKey ] &&
+			this._app._getters[ getterKey ]( this.getState() );
+	}
 	_commit( type, payload ) {
 		const parts = type.split( '/' );
 		const [ name, truetype ] = parts;
@@ -51,8 +57,9 @@ class Store {
 			return console.error( `action "${ type }" is not found` );
 		}
 		return this._actions[ type ]( {
+			get: this._get.bind( this ),
 			commit: this._commit.bind( this ),
-			dispatch: this.dispatch.bind( this )
+			dispatch: this.dispatch.bind( this ),
 		}, payload );
 	}
 	notify( name, type, payload ) {

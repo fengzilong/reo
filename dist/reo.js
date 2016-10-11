@@ -6056,7 +6056,8 @@ var eventemitter2 = createCommonjsModule(function (module, exports) {
 
 var ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
 
-var Store = function Store() {
+var Store = function Store( app ) {
+	this._app = app;
 	this._models = {};
 	this._modelArray = [];
 	this._state = {};
@@ -6094,6 +6095,11 @@ Store.prototype.registerActions = function registerActions ( actions ) {
 	}
 	this._actions = actions;
 };
+Store.prototype._get = function _get ( getterKey ) {
+	return this._app._getters &&
+		this._app._getters[ getterKey ] &&
+		this._app._getters[ getterKey ]( this.getState() );
+};
 Store.prototype._commit = function _commit ( type, payload ) {
 	var parts = type.split( '/' );
 	var name = parts[0];
@@ -6109,8 +6115,9 @@ Store.prototype.dispatch = function dispatch ( type, payload ) {
 		return console.error( ("action \"" + type + "\" is not found") );
 	}
 	return this._actions[ type ]( {
+		get: this._get.bind( this ),
 		commit: this._commit.bind( this ),
-		dispatch: this.dispatch.bind( this )
+		dispatch: this.dispatch.bind( this ),
 	}, payload );
 };
 Store.prototype.notify = function notify ( name, type, payload ) {
@@ -7776,7 +7783,7 @@ var devtoolsPlugin = function (options) { return function (store) {
 var App = (function (EventEmitter) {
 	function App() {
 		this._isRunning = false;
-		this.$store = this._store = new Store();
+		this.$store = this._store = new Store( this );
 		this._Base = index$1.extend();
 		this.managers = {
 			plugin: new PulginManager( this ),

@@ -10,7 +10,7 @@ import devtoolsPlugin from './plugins/devtools';
 class App extends EventEmitter {
 	constructor() {
 		this._isRunning = false;
-		this.$store = this._store = new Store();
+		this.$store = this._store = new Store( this );
 		this._Base = Regular.extend();
 		this.managers = {
 			plugin: new PluginManager( this ),
