@@ -1,5 +1,7 @@
 # reo <sup>wip</sup>
 
+[![build][build-image]][build-url]
+
 inspired by [dva](https://github.com/dvajs/dva) and [vuex](https://github.com/vuejs/vuex)
 
 ## Overview
@@ -68,3 +70,6 @@ app.start( '#app' )
 ## License
 
 MIT &copy; [fengzilong](https://github.com/fengzilong)
+
+[build-image]: https://img.shields.io/circleci/project/fengzilong/reo/master.svg?style=flat-square
+[build-url]: https://circleci.com/gh/fengzilong/reo

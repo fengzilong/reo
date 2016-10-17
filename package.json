@@ -8,6 +8,7 @@
     "build": "npm run build:reo && npm run build:logger",
     "build:reo": "bubleup ./src/index.js -d dist --format umd --name reo",
     "build:logger": "bubleup ./src/plugins/logger.js -d ./ --format umd --name logger",
+    "test": "npm run lint",
     "lint": "eslint src"
   },
   "repository": {
