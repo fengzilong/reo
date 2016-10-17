@@ -24,12 +24,12 @@ class Model {
 		this._subscribers.push( fn );
 	}
 	commit( type, payload ) {
-		if( this._committing ) {
+		if ( this._committing ) {
 			return;
 		}
 
 		// invalid action
-		if( typeof type !== 'string' ) {
+		if ( typeof type !== 'string' ) {
 			return;
 		}
 
@@ -37,7 +37,7 @@ class Model {
 		const state = this._state;
 
 		for ( let i in reducers ) {
-			if( type === i ) {
+			if ( type === i ) {
 				let reducer = reducers[ i ];
 				this._committing = true;
 				reducer( state, payload );

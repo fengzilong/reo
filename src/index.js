@@ -1,5 +1,5 @@
 import App from './app';
 
-export default function() {
+export default function () {
 	return new App();
 }

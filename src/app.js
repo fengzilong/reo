@@ -9,6 +9,7 @@ import devtoolsPlugin from './plugins/devtools';
 
 class App extends EventEmitter {
 	constructor() {
+		super();
 		this._isRunning = false;
 		this.$store = this._store = new Store( this );
 		this._Base = Regular.extend();
@@ -23,7 +24,7 @@ class App extends EventEmitter {
 		this.managers.plugin.register( plugin );
 	}
 	model( { name, state = {}, reducers = {} } = {} ) {
-		if( !name ) {
+		if ( !name ) {
 			throw new Error( 'please name your model' );
 		}
 
@@ -36,7 +37,7 @@ class App extends EventEmitter {
 		this._store.registerActions( actions );
 	}
 	getters( getters = {} ) {
-		if( this._getters ) {
+		if ( this._getters ) {
 			throw new Error( 'getters can only be called one time' );
 		}
 		this._getters = getters;

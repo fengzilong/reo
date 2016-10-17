@@ -7,7 +7,8 @@
     "dev": "onchange \"src\" -i -v -- npm run build",
     "build": "npm run build:reo && npm run build:logger",
     "build:reo": "bubleup ./src/index.js -d dist --format umd --name reo",
-    "build:logger": "bubleup ./src/plugins/logger.js -d ./ --format umd --name logger"
+    "build:logger": "bubleup ./src/plugins/logger.js -d ./ --format umd --name logger",
+    "lint": "eslint src"
   },
   "repository": {
     "type": "git",
@@ -16,7 +17,7 @@
   "author": "fengzilong",
   "license": "MIT",
   "eslintConfig": {
-    "extends": "mo"
+    "extends": "mo/browser"
   },
   "bugs": {
     "url": "https://github.com/fengzilong/reo/issues"

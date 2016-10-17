@@ -1,3 +1,5 @@
+/* eslint-disable guard-for-in */
+
 import Router from 'regular-router';
 
 export default class RouterManager {
@@ -20,7 +22,7 @@ export default class RouterManager {
 								// replaceState will replace state reference
 								// so get state in realtime when computes
 								const state = app._store.getState();
-								return getters[ c ]( state )
+								return getters[ c ]( state );
 							};
 						} else {
 							delete computed[ i ];
@@ -46,7 +48,7 @@ function walk( routes, fn ) {
 
 		const components = route.components || {};
 		if ( route.component ) {
-			components[ 'default' ] = route.component;
+			components.default = route.component;
 		}
 		walkComponents( components, fn );
 		if ( route.children ) {

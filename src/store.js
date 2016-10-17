@@ -1,3 +1,5 @@
+/* eslint-disable guard-for-in */
+
 const ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
 
 class Store {
@@ -33,7 +35,7 @@ class Store {
 		} );
 	}
 	registerActions( actions ) {
-		if( this._actions ) {
+		if ( this._actions ) {
 			return console.error( 'actions already registered' );
 		}
 		this._actions = actions;
@@ -48,7 +50,7 @@ class Store {
 		const [ name, truetype ] = parts;
 
 		const model = this._models[ name ];
-		if( model ) {
+		if ( model ) {
 			return model.commit( truetype, payload );
 		}
 	}
@@ -67,7 +69,7 @@ class Store {
 		const state = this._state;
 		for ( let i = 0, len = cbs.length; i < len; i++ ) {
 			const cb = cbs[ i ];
-			cb( { type: `${name}/${type}`, payload }, this._state );
+			cb( { type: `${ name }/${ type }`, payload }, state );
 		}
 	}
 	notifyViews() {
@@ -75,7 +77,6 @@ class Store {
 		for ( let i in this._subscribers ) {
 			cbs = cbs.concat( this._subscribers[ i ] );
 		}
-		const state = this._state;
 		for ( let i = 0, len = cbs.length; i < len; i++ ) {
 			const cb = cbs[ i ];
 			if ( cb._isFromView ) {
