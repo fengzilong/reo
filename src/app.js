@@ -12,6 +12,7 @@ class App extends EventEmitter {
 		super();
 		this._isRunning = false;
 		this.$store = this._store = new Store( this );
+		// extend from regular, so we can isolate from other apps
 		this._Base = Regular.extend();
 		this.managers = {
 			plugin: new PluginManager( this ),

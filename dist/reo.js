@@ -20,7 +20,7 @@ var tstr = ({}).toString;
 
 function extend(o1, o2 ){
   for(var i in o2) { if( o1[i] === undefined){
-    o1[i] = o2[i]
+    o1[i] = o2[i];
   } }
   return o2;
 }
@@ -108,15 +108,15 @@ var shim = function(){
         return fn.apply(context, args);
       }
     }
-  })
+  });
   
   // Array
   extend(Array, {
     isArray: function(arr){
       return tstr.call(arr) === "[object Array]";
     }
-  })
-}
+  });
+};
 
 // http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
 var entities = {
@@ -373,11 +373,11 @@ var entities = {
   'lsaquo':8249, 
   'rsaquo':8250, 
   'euro':8364
-}
+};
 
 
 
-var entities_1 = entities;
+var entities_1  = entities;
 
 var util = createCommonjsModule(function (module) {
 shim();
@@ -389,6 +389,7 @@ var entities = entities_1;
 var slice = [].slice;
 var o2str = ({}).toString;
 var win = typeof window !=='undefined'? window: commonjsGlobal;
+var MAX_PRIORITY = 9999;
 
 
 _.noop = function(){};
@@ -400,29 +401,27 @@ _.uid = (function(){
 })();
 
 _.extend = function( o1, o2, override ){
-  // if(_.typeOf(override) === 'array'){
-  //  for(var i = 0, len = override.length; i < len; i++ ){
-  //   var key = override[i];
-  //   o1[key] = o2[key];
-  //  } 
-  // }else{
-  for(var i in o2){
-    if( typeof o1[i] === "undefined" || override === true ){
-      o1[i] = o2[i]
+  for(var i in o2) { if (o2.hasOwnProperty(i)){
+    if( o1[i] === undefined || override === true ){
+      o1[i] = o2[i];
     }
-  }
-  // }
+  } }
   return o1;
-}
+};
 
-_.keys = function(obj){
-  if(Object.keys) { return Object.keys(obj); }
+_.keys = Object.keys? Object.keys: function(obj){
   var res = [];
   for(var i in obj) { if(obj.hasOwnProperty(i)){
     res.push(i);
   } }
   return res;
-}
+};
+
+_.some = function(list, fn){
+  for(var i =0,len = list.length; i < len; i++){
+    if(fn(list[i])) { return true }
+  }
+};
 
 _.varName = 'd';
 _.setName = 'p_';
@@ -435,26 +434,28 @@ _.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
 _.nextTick = typeof setImmediate === 'function'? 
   setImmediate.bind(win) : 
   function(callback) {
-    setTimeout(callback, 0) 
-  }
+    setTimeout(callback, 0); 
+  };
 
 
 
-_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
+_.prefix = "'use strict';var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 _.slice = function(obj, start, end){
   var res = [];
   for(var i = start || 0, len = end || obj.length; i < len; i++){
-    var item = obj[i];
-    res.push(item)
+    res.push(obj[i]);
   }
   return res;
-}
+};
 
+// beacuse slice and toLowerCase is expensive. we handle undefined and null in another way
 _.typeOf = function (o) {
   return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
-}
+};
+
+
 
 
 _.makePredicate = function makePredicate(words, prefix) {
@@ -500,7 +501,7 @@ _.makePredicate = function makePredicate(words, prefix) {
         compareTo(words);
     }
     return new Function("str", f);
-}
+};
 
 
 _.trackErrorPos = (function (){
@@ -527,7 +528,7 @@ _.trackErrorPos = (function (){
     if(max > len) { max = len; }
 
     var remain = str.slice(min, max);
-    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
+    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "");
     var postfix = max < len ? "..": "";
     var res = prefix + remain + postfix;
     if(target) { res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^"; }
@@ -554,7 +555,7 @@ _.findSubCapture = function (regStr) {
     right = 0,
     len = regStr.length,
     ignored = regStr.match(ignoredRef); // ignored uncapture
-  if(ignored) { ignored = ignored.length }
+  if(ignored) { ignored = ignored.length; }
   else { ignored = 0; }
   for (; len--;) {
     var letter = regStr.charAt(len);
@@ -583,66 +584,79 @@ _.convertEntity = function(chr){
     var charCode;
     if( dec ) { charCode = parseInt( dec.slice(1), 10 ); }
     else if( hex ) { charCode = parseInt( hex.slice(2), 16 ); }
-    else { charCode = entities[capture] }
+    else { charCode = entities[capture]; }
 
     return String.fromCharCode( charCode )
   });
 
-}
+};
 
 
 // simple get accessor
 
-_.createObject = function(o, props){
-    function Foo() {}
-    Foo.prototype = o;
-    var res = new Foo;
-    if(props) { _.extend(res, props); }
-    return res;
-}
+_.createObject = Object.create? function(o){
+  return Object.create(o || null)
+}: (function(){
+    function Temp() {}
+    return function(o){
+      if(!o) { return {} }
+      Temp.prototype = o;
+      var obj = new Temp();
+      Temp.prototype = null; // 不要保持一个 O 的杂散引用（a stray reference）...
+      return obj
+    }
+})();
 
 _.createProto = function(fn, o){
     function Foo() { this.constructor = fn;}
     Foo.prototype = o;
     return (fn.prototype = new Foo());
-}
+};
 
+
+_.removeOne = function(list , filter){
+  var len = list.length;
+  for(;len--;){
+    if(filter(list[len])) {
+      list.splice(len, 1);
+      return;
+    }
+  }
+};
 
 
 /**
 clone
 */
 _.clone = function clone(obj){
-    var type = _.typeOf(obj);
-    if(type === 'array'){
-      var cloned = [];
-      for(var i=0,len = obj.length; i< len;i++){
-        cloned[i] = obj[i]
-      }
-      return cloned;
+  if(!obj || (typeof obj !== 'object' )) { return obj; }
+  if(Array.isArray(obj)){
+    var cloned = [];
+    for(var i=0,len = obj.length; i< len;i++){
+      cloned[i] = obj[i];
     }
-    if(type === 'object'){
-      var cloned = {};
-      for(var i in obj) { if(obj.hasOwnProperty(i)){
-        cloned[i] = obj[i];
-      } }
-      return cloned;
-    }
-    return obj;
+    return cloned;
+  }else{
+    var cloned = {};
+    for(var i in obj) { if(obj.hasOwnProperty(i)){
+      cloned[i] = obj[i];
+    } }
+    return cloned;
   }
+};
 
 _.equals = function(now, old){
   var type = typeof now;
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) { return true }
   return now === old;
-}
+};
 
 var dash = /-([a-z])/g;
 _.camelCase = function(str){
   return str.replace(dash, function(all, capture){
     return capture.toUpperCase();
   })
-}
+};
 
 
 
@@ -722,14 +736,9 @@ _.cache = function(max){
       return keys.length;
     }
   };
-}
+};
 
 // // setup the raw Expression
-// _.touchExpression = function(expr){
-//   if(expr.type === 'expression'){
-//   }
-//   return expr;
-// }
 
 
 // handle the same logic on component's `on-*` and element's `on-*`
@@ -747,19 +756,19 @@ _.handleEvent = function(value, type ){
         var res = evaluate(self);
         if(res === false && obj && obj.preventDefault) { obj.preventDefault(); }
         data.$event = undefined;
-      })
+      });
 
     }
   }else{
     return function fire(){
-      var args = slice.call(arguments)      
+      var args = _.slice(arguments);
       args.unshift(value);
       self.$update(function(){
         self.$emit.apply(self, args);
-      })
+      });
     }
   }
-}
+};
 
 // only call once
 _.once = function(fn){
@@ -767,14 +776,14 @@ _.once = function(fn){
   return function(){
     if( time++ === 0) { fn.apply(this, arguments); }
   }
-}
+};
 
 _.fixObjStr = function(str){
   if(str.trim().indexOf('{') !== 0){
     return '{' + str + '}';
   }
   return str;
-}
+};
 
 
 _.map= function(array, callback){
@@ -783,7 +792,7 @@ _.map= function(array, callback){
     res.push(callback(array[i], i));
   }
   return res;
-}
+};
 
 function log(msg, type){
   if(typeof console !== "undefined")  { console[type || "log"](msg); }
@@ -792,26 +801,123 @@ function log(msg, type){
 _.log = log;
 
 
+_.normListener = function( events  ){
+    var eventListeners = [];
+    var pType = _.typeOf( events );
+    if( pType === 'array' ){
+      return events;
+    }else if ( pType === 'object' ){
+      for( var i in events ) { if ( events.hasOwnProperty(i) ){
+        eventListeners.push({
+          type: i,
+          listener: events[i]
+        });
+      } }
+    }
+    return eventListeners;
+};
 
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
-_.isFalse - function(){return false}
-_.isTrue - function(){return true}
 
 _.isExpr = function(expr){
   return expr && expr.type === 'expression';
-}
+};
 // @TODO: make it more strict
 _.isGroup = function(group){
   return group.inject || group.$inject;
-}
+};
 
 _.getCompileFn = function(source, ctx, options){
   return ctx.$compile.bind(ctx,source, options)
-}
+};
+
+// remove directive param from AST
+_.fixTagAST = function( tagAST, Component ){
+
+  if( tagAST.touched ) { return; }
+
+  var attrs = tagAST.attrs;
+
+  if( !attrs ) { return; }
+
+  // Maybe multiple directive need same param, 
+  // We place all param in totalParamMap
+  var len = attrs.length;
+  if(!len) { return; }
+  var directives=[], otherAttrMap = {};
+  for(;len--;){
+
+    var attr = attrs[ len ];
+
+
+    // @IE fix IE9- input type can't assign after value
+    if(attr.name === 'type') { attr.priority = MAX_PRIORITY+1; }
+
+    var directive = Component.directive( attr.name );
+    if( directive ) {
+
+      attr.priority = directive.priority || 1;
+      attr.directive = true;
+      directives.push(attr);
+
+    }else if(attr.type === 'attribute'){
+      otherAttrMap[attr.name] = attr.value;
+    }
+  }
+
+  directives.forEach( function( attr ){
+    var directive = Component.directive(attr.name);
+    var param = directive.param;
+    if(param && param.length){
+      attr.param = {};
+      param.forEach(function( name ){
+        if( name in otherAttrMap ){
+          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name];
+          _.removeOne(attrs, function(attr){
+            return attr.name === name
+          });
+        }
+      });
+    }
+  });
+
+  attrs.sort(function(a1, a2){
+    
+    var p1 = a1.priority;
+    var p2 = a2.priority;
+
+    if( p1 == null ) { p1 = MAX_PRIORITY; }
+    if( p2 == null ) { p2 = MAX_PRIORITY; }
+
+    return p2 - p1;
+
+  });
+
+  tagAST.touched = true;
+};
+
+_.findItem = function(list, filter){
+  if(!list || !list.length) { return; }
+  var len = list.length;
+  while(len--){
+    if(filter(list[len])) { return list[len] }
+  }
+};
+
+_.getParamObj = function(component, param){
+  var paramObj = {};
+  if(param) {
+    for(var i in param) { if(param.hasOwnProperty(i)){
+      var value = param[i];
+      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+    } }
+  }
+  return paramObj;
+};
 });
 
 // some fixture test;
@@ -838,7 +944,7 @@ var config$1 = {
   'BEGIN': '{',
   'END': '}',
   'PRECOMPILE': false
-}
+};
 
 var _$2 = util;
 var config$4 = config$1;
@@ -852,7 +958,7 @@ var macro = {
   'NAME': /(?:[:_A-Za-z][-\.:_0-9A-Za-z]*)/,
   'IDENT': /[\$_A-Za-z][_0-9A-Za-z\$]*/,
   'SPACE': /[\r\n\t\f ]/
-}
+};
 
 
 var test = /a|(b)/.exec("a");
@@ -882,7 +988,7 @@ function Lexer$1(input, opts){
   }
 }
 
-var lo = Lexer$1.prototype
+var lo = Lexer$1.prototype;
 
 
 lo.lex = function(str){
@@ -896,17 +1002,17 @@ lo.lex = function(str){
   this.index=0;
   var i = 0;
   while(str){
-    i++
+    i++;
     state = this$1.state();
-    split = this$1.map[state] 
+    split = this$1.map[state]; 
     test = split.TRUNK.exec(str);
     if(!test){
       this$1.error('Unrecoginized Token');
     }
     mlen = test[0].length;
-    str = str.slice(mlen)
-    token = this$1._process.call(this$1, test, split, str)
-    if(token) { tokens.push(token) }
+    str = str.slice(mlen);
+    token = this$1._process.call(this$1, test, split, str);
+    if(token) { tokens.push(token); }
     this$1.index += mlen;
     // if(state == 'TAG' || state == 'JST') str = this.skipspace(str);
   }
@@ -914,11 +1020,11 @@ lo.lex = function(str){
   tokens.push({type: 'EOF'});
 
   return tokens;
-}
+};
 
 lo.error = function(msg){
   throw  Error("Parse Error: " + msg +  ':\n' + _$2.trackErrorPos(this.input, this.index));
-}
+};
 
 lo._process = function(args, split,str){
   var this$1 = this;
@@ -934,7 +1040,7 @@ lo._process = function(args, split,str){
     if(testSubCapure(args[index])) {
       marched = true;
       if(handler){
-        token = handler.apply(this$1, args.slice(index, index + link[1]))
+        token = handler.apply(this$1, args.slice(index, index + link[1]));
         if(token)  { token.pos = this$1.index; }
       }
       break;
@@ -951,21 +1057,21 @@ lo._process = function(args, split,str){
     }
   }
   return token;
-}
+};
 lo.enter = function(state){
-  this.states.push(state)
+  this.states.push(state);
   return this;
-}
+};
 
 lo.state = function(){
   var states = this.states;
   return states[states.length-1];
-}
+};
 
 lo.leave = function(state){
   var states = this.states;
-  if(!state || states[states.length-1] === state) { states.pop() }
-}
+  if(!state || states[states.length-1] === state) { states.pop(); }
+};
 
 
 Lexer$1.setup = function(){
@@ -1001,7 +1107,7 @@ Lexer$1.setup = function(){
     rules.JST_PUNCHOR,
     rules.JST_STRING,
     rules.JST_COMMENT
-    ])
+    ]);
 
   // ignored the tag-relative token
   map2 = genMap([
@@ -1020,8 +1126,8 @@ Lexer$1.setup = function(){
     rules.JST_PUNCHOR,
     rules.JST_STRING,
     rules.JST_COMMENT
-    ])
-}
+    ]);
+};
 
 
 function genMap(rules){
@@ -1059,13 +1165,13 @@ function setup(map){
       }
       if(_$2.typeOf(reg) === 'regexp') { reg = reg.toString().slice(1, -1); }
 
-      reg = reg.replace(/\{(\w+)\}/g, replaceFn)
+      reg = reg.replace(/\{(\w+)\}/g, replaceFn);
       retain = _$2.findSubCapture(reg) + 1; 
       split.links.push([split.curIndex, retain, handler]); 
       split.curIndex += retain;
       trunks.push(reg);
     }
-    split.TRUNK = new RegExp("^(?:(" + trunks.join(")|(") + "))")
+    split.TRUNK = new RegExp("^(?:(" + trunks.join(")|(") + "))");
   }
   return map;
 }
@@ -1125,7 +1231,7 @@ var rules = {
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
   TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, function(all){
-    this.leave()
+    this.leave();
     // this.leave('TAG')
   } ,'TAG'],
 
@@ -1163,7 +1269,7 @@ var rules = {
     if(all === this.markStart){
       if(this.expression) { return { type: this.markStart, value: this.markStart }; }
       if(this.firstEnterStart || this.marks){
-        this.marks++
+        this.marks++;
         this.firstEnterStart = false;
         return { type: this.markStart, value: this.markStart };
       }else{
@@ -1188,7 +1294,7 @@ var rules = {
   JST_NUMBER: [/(?:[0-9]*\.[0-9]+|[0-9]+)(e\d+)?/, function(all){
     return {type: 'NUMBER', value: parseFloat(all, 10)};
   }, 'JST']
-}
+};
 
 
 // setup when first config
@@ -1233,12 +1339,13 @@ var node$1 = {
       track: track
     }
   },
-  expression: function( body, setbody, constant ){
+  expression: function( body, setbody, constant, filters ){
     return {
       type: "expression",
       body: body,
       constant: constant || false,
-      setbody: setbody || false
+      setbody: setbody || false,
+      filters: filters
     }
   },
   text: function(text){
@@ -1253,7 +1360,7 @@ var node$1 = {
       content: template
     }
   }
-}
+};
 
 var _$3 = util;
 
@@ -1286,10 +1393,10 @@ op.parse = function(){
   this.pos = 0;
   var res= this.program();
   if(this.ll().type === 'TAG_CLOSE'){
-    this.error("You may got a unclosed Tag")
+    this.error("You may got a unclosed Tag");
   }
   return res;
-}
+};
 
 op.ll =  function(k){
   k = k || 1;
@@ -1299,31 +1406,31 @@ op.ll =  function(k){
       return this.tokens[this.length-1];
   }
   return this.tokens[pos];
-}
+};
   // lookahead
 op.la = function(k){
   return (this.ll(k) || '').type;
-}
+};
 
 op.match = function(type, value){
   var ll;
   if(!(ll = this.eat(type, value))){
     ll  = this.ll();
-    this.error('expect [' + type + (value == null? '':':'+ value) + ']" -> got "[' + ll.type + (value==null? '':':'+ll.value) + ']', ll.pos)
+    this.error('expect [' + type + (value == null? '':':'+ value) + ']" -> got "[' + ll.type + (value==null? '':':'+ll.value) + ']', ll.pos);
   }else{
     return ll;
   }
-}
+};
 
 op.error = function(msg, pos){
   msg =  "\n【 parse failed 】 " + msg +  ':\n\n' + _$3.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
   throw new Error(msg);
-}
+};
 
 op.next = function(k){
   k = k || 1;
   this.pos += k;
-}
+};
 op.eat = function(type, value){
   var this$1 = this;
 
@@ -1342,7 +1449,7 @@ op.eat = function(type, value){
     }
   }
   return false;
-}
+};
 
 // program
 //  :EOF
@@ -1358,7 +1465,7 @@ op.program = function(){
   }
   // if(ll.type === 'TAG_CLOSE') this.error("You may have unmatched Tag")
   return statements;
-}
+};
 
 // statement
 //  : xml
@@ -1382,9 +1489,9 @@ op.statement = function(){
     case 'EXPR_OPEN':
       return this.interplation();
     default:
-      this.error('Unexpected token: '+ this.la())
+      this.error('Unexpected token: '+ this.la());
   }
-}
+};
 
 // xml 
 // stag statement* TAG_CLOSE?(if self-closed tag)
@@ -1392,14 +1499,14 @@ op.xml = function(){
   var name, attrs, children, selfClosed;
   name = this.match('TAG_OPEN').value;
   attrs = this.attrs();
-  selfClosed = this.eat('/')
+  selfClosed = this.eat('/');
   this.match('>');
   if( !selfClosed && !_$3.isVoidTag(name) ){
     children = this.program();
-    if(!this.eat('TAG_CLOSE', name)) { this.error('expect </'+name+'> got'+ 'no matched closeTag') }
+    if(!this.eat('TAG_CLOSE', name)) { this.error('expect </'+name+'> got'+ 'no matched closeTag'); }
   }
   return node.element(name, attrs, children);
-}
+};
 
 // xentity
 //  -rule(wrap attribute)
@@ -1418,7 +1525,7 @@ op.xentity = function(ll){
     if(~name.indexOf('.')){
       var tmp = name.split('.');
       name = tmp[0];
-      modifier = tmp[1]
+      modifier = tmp[1];
 
     }
     if( this.eat("=") ) { value = this.attvalue(modifier); }
@@ -1428,26 +1535,26 @@ op.xentity = function(ll){
     return this['if'](true);
   }
 
-}
+};
 
 // stag     ::=    '<' Name (S attr)* S? '>'  
 // attr    ::=     Name Eq attvalue
 op.attrs = function(isAttribute){
   var this$1 = this;
 
-  var eat
+  var eat;
   if(!isAttribute){
-    eat = ["NAME", "OPEN"]
+    eat = ["NAME", "OPEN"];
   }else{
-    eat = ["NAME"]
+    eat = ["NAME"];
   }
 
   var attrs = [], ll;
   while (ll = this.eat(eat)){
-    attrs.push(this$1.xentity( ll ))
+    attrs.push(this$1.xentity( ll ));
   }
   return attrs;
-}
+};
 
 // attvalue
 //  : STRING  
@@ -1485,9 +1592,9 @@ op.attvalue = function(mdf){
     //   }
     //   break;
     default:
-      this.error('Unexpected token: '+ this.la())
+      this.error('Unexpected token: '+ this.la());
   }
-}
+};
 
 
 // {{#}}
@@ -1499,7 +1606,7 @@ op.directive = function(){
   }else{
     this.error('Undefined directive['+ name +']');
   }
-}
+};
 
 
 // {{}}
@@ -1508,14 +1615,14 @@ op.interplation = function(){
   var res = this.expression(true);
   this.match('END');
   return res;
-}
+};
 
 // {{~}}
 op.inc = op.include = function(){
   var content = this.expression();
   this.match('END');
   return node.template(content);
-}
+};
 
 // {{#if}}
 op["if"] = function(tag){
@@ -1551,9 +1658,9 @@ op["if"] = function(tag){
     }
   }
   // if statement not matched
-  if(close.value !== "if") { this.error('Unmatched if directive') }
+  if(close.value !== "if") { this.error('Unmatched if directive'); }
   return node["if"](test, consequent, alternate);
-}
+};
 
 
 // @mark   mustache syntax have natrure dis, canot with expression
@@ -1595,7 +1702,7 @@ op.list = function(){
   
   if(ll.value !== 'list') { this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos ); }
   return node.list(sequence, variable, consequent, alternate, track);
-}
+};
 
 
 op.expression = function(){
@@ -1603,22 +1710,22 @@ op.expression = function(){
   if(this.eat('@(')){ //once bind
     expression = this.expr();
     expression.once = true;
-    this.match(')')
+    this.match(')');
   }else{
     expression = this.expr();
   }
   return expression;
-}
+};
 
 op.expr = function(){
   this.depend = [];
 
-  var buffer = this.filter()
+  var buffer = this.filter();
 
   var body = buffer.get || buffer;
   var setbody = buffer.set;
-  return node.expression(body, setbody, !this.depend.length);
-}
+  return node.expression(body, setbody, !this.depend.length, buffer.filters);
+};
 
 
 // filter
@@ -1628,25 +1735,34 @@ op.filter = function(){
 
   var left = this.assign();
   var ll = this.eat('|');
-  var buffer = [], setBuffer, prefix,
+  var buffer = [], filters,setBuffer, prefix,
     attr = "t", 
     set = left.set, get, 
     tmp = "";
 
   if(ll){
-    if(set) { setBuffer = []; }
+    if(set) {
+      setBuffer = [];
+      filters = [];
+    }
 
     prefix = "(function(" + attr + "){";
 
     do{
-      tmp = attr + " = " + ctxName + "._f_('" + this$1.match('IDENT').value+ "' ).get.call( "+_$3.ctxName +"," + attr ;
+      var filterName = this$1.match('IDENT').value;
+      tmp = attr + " = " + ctxName + "._f_('" + filterName + "' ).get.call( "+_$3.ctxName +"," + attr ;
       if(this$1.eat(':')){
-        tmp +=", "+ this$1.arguments("|").join(",") + ");"
+        tmp +=", "+ this$1.arguments("|").join(",") + ");";
       }else{
-        tmp += ');'
+        tmp += ');';
       }
       buffer.push(tmp);
-      setBuffer && setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
+      
+      if(set){
+        // only in runtime ,we can detect  whether  the filter has a set function. 
+        filters.push(filterName);
+        setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
+      }
 
     }while(ll = this.eat('|'));
     buffer.push("return " + attr );
@@ -1661,10 +1777,12 @@ op.filter = function(){
 
     }
     // the set function is depend on the filter definition. if it have set method, the set will work
-    return this.getset(get, set);
+    var ret = getset(get, set);
+    ret.filters = filters;
+    return ret;
   }
   return left;
-}
+};
 
 // assign
 // left-hand-expr = condition
@@ -1672,11 +1790,11 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) { this.error('invalid lefthand expression in assignment expression'); }
-    return this.getset( left.set.replace( "," + _$3.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
-    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+    return getset( left.set.replace( "," + _$3.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
+    // return getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
-}
+};
 
 // or
 // or ? assign : assign
@@ -1684,14 +1802,14 @@ op.condition = function(){
 
   var test = this.or();
   if(this.eat('?')){
-    return this.getset([test.get + "?", 
+    return getset([test.get + "?", 
       this.assign().get, 
       this.match(":").type, 
       this.assign().get].join(""));
   }
 
   return test;
-}
+};
 
 // and
 // and && or
@@ -1700,11 +1818,11 @@ op.or = function(){
   var left = this.and();
 
   if(this.eat('||')){
-    return this.getset(left.get + '||' + this.or().get);
+    return getset(left.get + '||' + this.or().get);
   }
 
   return left;
-}
+};
 // equal
 // equal && and
 op.and = function(){
@@ -1712,10 +1830,10 @@ op.and = function(){
   var left = this.equal();
 
   if(this.eat('&&')){
-    return this.getset(left.get + '&&' + this.and().get);
+    return getset(left.get + '&&' + this.and().get);
   }
   return left;
-}
+};
 // relation
 // 
 // equal == relation
@@ -1726,10 +1844,10 @@ op.equal = function(){
   var left = this.relation(), ll;
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return this.getset(left.get + ll.type + this.equal().get);
+    return getset(left.get + ll.type + this.equal().get);
   }
   return left
-}
+};
 // relation < additive
 // relation > additive
 // relation <= additive
@@ -1739,10 +1857,10 @@ op.relation = function(){
   var left = this.additive(), ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return this.getset(left.get + ll.value + this.relation().get);
+    return getset(left.get + ll.value + this.relation().get);
   }
   return left
-}
+};
 // additive :
 // multive
 // additive + multive
@@ -1750,10 +1868,10 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return this.getset(left.get + ll.value + this.additive().get);
+    return getset(left.get + ll.value + this.additive().get);
   }
   return left
-}
+};
 // multive :
 // unary
 // multive * unary
@@ -1762,10 +1880,10 @@ op.additive = function(){
 op.multive = function(){
   var left = this.range() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return this.getset(left.get + ll.type + this.multive().get);
+    return getset(left.get + ll.type + this.multive().get);
   }
   return left;
-}
+};
 
 op.range = function(){
   var left = this.unary(), ll, right;
@@ -1773,12 +1891,12 @@ op.range = function(){
   if(ll = this.eat('..')){
     right = this.unary();
     var body = 
-      "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
-    return this.getset(body);
+      "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")";
+    return getset(body);
   }
 
   return left;
-}
+};
 
 
 
@@ -1790,11 +1908,11 @@ op.range = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return this.getset('(' + ll.type + this.unary().get + ')') ;
+    return getset('(' + ll.type + this.unary().get + ')') ;
   }else{
     return this.member()
   }
-}
+};
 
 // call[lefthand] :
 // member args
@@ -1813,7 +1931,7 @@ op.member = function(base, last, pathes, prevBase){
       pathes = [];
       pathes.push( path );
       last = path;
-      extValue = extName + "." + path
+      extValue = extName + "." + path;
       base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
       onlySimpleAccessor = true;
     }else{ //Primative Type
@@ -1856,13 +1974,13 @@ op.member = function(base, last, pathes, prevBase){
         }else{
           base += "[" + path.get + "]";
         }
-        this.match(']')
+        this.match(']');
         return this.member(base, path, pathes, prevBase);
       case '(':
         // call(callee, args)
         var args = this.arguments().join(',');
         base =  base+"(" + args +")";
-        this.match(')')
+        this.match(')');
         return this.member(base, null, pathes);
     }
   }
@@ -1877,7 +1995,7 @@ op.member = function(base, last, pathes, prevBase){
   
   }
   return res;
-}
+};
 
 /**
  * 
@@ -1885,15 +2003,15 @@ op.member = function(base, last, pathes, prevBase){
 op.arguments = function(end){
   var this$1 = this;
 
-  end = end || ')'
+  end = end || ')';
   var args = [];
   do{
     if(this$1.la() !== end){
-      args.push(this$1.assign().get)
+      args.push(this$1.assign().get);
     }
   }while( this.eat(','));
   return args
-}
+};
 
 
 // primary :
@@ -1916,20 +2034,22 @@ op.primary = function(){
     // literal or ident
     case 'STRING':
       this.next();
-      return this.getset("'" + ll.value + "'")
+      var value = "" + ll.value;
+      var quota = ~value.indexOf("'")? "\"": "'";
+      return getset(quota + value + quota);
     case 'NUMBER':
       this.next();
-      return this.getset(""+ll.value);
+      return getset( "" + ll.value );
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){
-        return this.getset( ll.value );
+        return getset( ll.value );
       }
       return ll.value;
     default: 
       this.error('Unexpected Token: ' + ll.type);
   }
-}
+};
 
 // object
 //  {propAssign [, propAssign] * [,]}
@@ -1957,7 +2077,7 @@ op.object = function(){
   }
   code.push(this.match('}').type);
   return {get: code.join("")}
-}
+};
 
 // array
 // [ assign[,assign]*]
@@ -1977,18 +2097,19 @@ op.array = function(){
     code.push(this.match(']').type);
   }
   return {get: code.join("")};
-}
+};
 
 // '(' expression ')'
 op.paren = function(){
   this.match('(');
-  var res = this.filter()
+  var res = this.filter();
   res.get = '(' + res.get + ')';
+  res.set = res.set;
   this.match(')');
   return res;
-}
+};
 
-op.getset = function(get, set){
+function getset(get, set){
   return {
     get: get,
     set: set
@@ -2013,8 +2134,20 @@ var _$4 = util;
 var fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/;
 var isFn = function(o){return typeof o === "function"};
 
+var hooks = {
+  events: function( propertyValue, proto ){
+    var eventListeners = proto._eventListeners || [];
+    var normedEvents = _$4.normListener(propertyValue);
 
-function wrap(k, fn, supro) {
+    if(normedEvents.length) {
+      proto._eventListeners = eventListeners.concat( normedEvents );
+    }
+    delete proto.events ;
+  }
+};
+
+
+function wrap( k, fn, supro ) {
   return function () {
     var tmp = this.supr;
     this.supr = supro[k];
@@ -2027,7 +2160,9 @@ function wrap(k, fn, supro) {
 function process( what, o, supro ) {
   for ( var k in o ) {
     if (o.hasOwnProperty(k)) {
-
+      if(hooks[k]) {
+        hooks[k](o[k], what, supro);
+      }
       what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
         fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
     }
@@ -2035,7 +2170,7 @@ function process( what, o, supro ) {
 }
 
 // if the property is ["events", "data", "computed"] , we should merge them
-var merged = ["events", "data", "computed"];
+var merged = ["data", "computed"];
 var mlen = merged.length;
 var extend$2 = function extend$2(o){
   o = o || {};
@@ -2060,8 +2195,8 @@ var extend$2 = function extend$2(o){
     var len = mlen;
     for(;len--;){
       var prop = merged[len];
-      if(o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
-        _$4.extend(proto[prop], o[prop], true) 
+      if(proto[prop] && o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
+        _$4.extend(proto[prop], o[prop], true); 
         delete o[prop];
       }
     }
@@ -2073,12 +2208,12 @@ var extend$2 = function extend$2(o){
 
 
 
-  fn.implement = implement
-  fn.implement(o)
+  fn.implement = implement;
+  fn.implement(o);
   if(supr.__after__) { supr.__after__.call(fn, supr, o); }
   fn.extend = extend$2;
   return fn;
-}
+};
 
 var _const = {
   'COMPONENT_TYPE': 1,
@@ -2086,8 +2221,16 @@ var _const = {
   'NAMESPACE': {
     html: "http://www.w3.org/1999/xhtml",
     svg: "http://www.w3.org/2000/svg"
+  },
+  'OPTIONS': {
+    'STABLE_INIT': { stable: !0, init: !0 },
+    'FORCE_INIT': { force: !0, init: !0 },
+    'STABLE': {stable: !0},
+    'INIT': { init: !0 },
+    'SYNC': { sync: !0 },
+    'FORCE': { force: !0 }
   }
-}
+};
 
 var dom_1 = createCommonjsModule(function (module) {
 // thanks for angular && mootools for some concise&cross-platform  implemention
@@ -2100,13 +2243,14 @@ var dom_1 = createCommonjsModule(function (module) {
 // license: MIT-style license. http://mootools.net
 
 
+
 var dom = module.exports;
 var env$$1 = env;
 var _ = util;
 var consts = _const;
-var tNode = document.createElement('div')
+var tNode = document.createElement('div');
 var addEvent, removeEvent;
-var noop = function(){}
+var noop = function(){};
 
 var namespaces = consts.NAMESPACE;
 
@@ -2127,17 +2271,17 @@ dom.tNode = tNode;
 if(tNode.addEventListener){
   addEvent = function(node, type, fn) {
     node.addEventListener(type, fn, false);
-  }
+  };
   removeEvent = function(node, type, fn) {
-    node.removeEventListener(type, fn, false) 
-  }
+    node.removeEventListener(type, fn, false); 
+  };
 }else{
   addEvent = function(node, type, fn) {
     node.attachEvent('on' + type, fn);
-  }
+  };
   removeEvent = function(node, type, fn) {
     node.detachEvent('on' + type, fn); 
-  }
+  };
 }
 
 
@@ -2155,7 +2299,7 @@ dom.find = function(sl){
     }
   }
   if(sl.indexOf('#')!==-1) { return document.getElementById( sl.slice(1) ); }
-}
+};
 
 
 dom.inject = function(node, refer, position){
@@ -2166,7 +2310,7 @@ dom.inject = function(node, refer, position){
     var tmp = node;
     node = dom.fragment();
     for(var i = 0,len = tmp.length; i < len ;i++){
-      node.appendChild(tmp[i])
+      node.appendChild(tmp[i]);
     }
   }
 
@@ -2192,12 +2336,12 @@ dom.inject = function(node, refer, position){
     case 'before':
       refer.parentNode.insertBefore( node, refer );
   }
-}
+};
 
 
 dom.id = function(id){
   return document.getElementById(id);
-}
+};
 
 // createElement 
 dom.create = function(type, ns, attrs){
@@ -2206,12 +2350,12 @@ dom.create = function(type, ns, attrs){
     ns = namespaces.svg;
   }
   return !ns? document.createElement(type): document.createElementNS(ns, type);
-}
+};
 
 // documentFragment
 dom.fragment = function(){
   return document.createDocumentFragment();
-}
+};
 
 
 
@@ -2229,7 +2373,7 @@ var specialAttr = {
   'value': function(node, value){
     node.value = (value != null) ? value : '';
   }
-}
+};
 
 
 // attribute Setter & Getter
@@ -2241,7 +2385,7 @@ dom.attr = function(node, name, value){
         node.setAttribute(name, name);
         // lt ie7 . the javascript checked setting is in valid
         //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-        if(dom.msie && dom.msie <=7 ) { node.defaultChecked = true }
+        if(dom.msie && dom.msie <=7 && name === 'checked' ) { node.defaultChecked = true; }
       } else {
         node[name] = false;
         node.removeAttribute(name);
@@ -2253,7 +2397,7 @@ dom.attr = function(node, name, value){
   } else if (typeof (value) !== 'undefined') {
     // if in specialAttr;
     if(specialAttr[name]) { specialAttr[name](node, value); }
-    else if(value === null) { node.removeAttribute(name) }
+    else if(value === null) { node.removeAttribute(name); }
     else { node.setAttribute(name, value); }
   } else if (node.getAttribute) {
     // the extra argument "2" is to get the right thing for a.href in IE, see jQuery code
@@ -2262,7 +2406,7 @@ dom.attr = function(node, name, value){
     // normalize non-existing attributes to undefined (as jQuery)
     return ret === null ? undefined : ret;
   }
-}
+};
 
 
 dom.on = function(node, type, handler){
@@ -2271,20 +2415,21 @@ dom.on = function(node, type, handler){
     var $event = new Event(ev);
     $event.origin = node;
     handler.call(node, $event);
-  }
+  };
   types.forEach(function(type){
     type = fixEventName(node, type);
     addEvent(node, type, handler.real);
   });
-}
+  return dom;
+};
 dom.off = function(node, type, handler){
   var types = type.split(' ');
   handler = handler.real || handler;
   types.forEach(function(type){
     type = fixEventName(node, type);
     removeEvent(node, type, handler);
-  })
-}
+  });
+};
 
 
 dom.text = (function (){
@@ -2312,21 +2457,21 @@ dom.html = function( node, html ){
   }else{
     node.innerHTML = html;
   }
-}
+};
 
 dom.replace = function(node, replaced){
   if(replaced.parentNode) { replaced.parentNode.replaceChild(node, replaced); }
-}
+};
 
 dom.remove = function(node){
   if(node.parentNode) { node.parentNode.removeChild(node); }
-}
+};
 
 // css Settle & Getter from angular
 // =================================
 // it isnt computed style 
 dom.css = function(node, name, value){
-  if( _.typeOf(name) === "object" ){
+  if( typeof (name) === "object" && name ){
     for(var i in name){
       if( name.hasOwnProperty(i) ){
         dom.css( node, i, name[i] );
@@ -2353,24 +2498,24 @@ dom.css = function(node, name, value){
     }
     return  val;
   }
-}
+};
 
 dom.addClass = function(node, className){
   var current = node.className || "";
   if ((" " + current + " ").indexOf(" " + className + " ") === -1) {
     node.className = current? ( current + " " + className ) : className;
   }
-}
+};
 
 dom.delClass = function(node, className){
   var current = node.className || "";
   node.className = (" " + current + " ").replace(" " + className + " ", " ").trim();
-}
+};
 
 dom.hasClass = function(node, className){
   var current = node.className || "";
   return (" " + current + " ").indexOf(" " + className + " ") !== -1;
-}
+};
 
 
 
@@ -2385,7 +2530,7 @@ function fixEventName(elem, name){
     )? 'click': name;
 }
 
-var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/
+var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/;
 var doc = document;
 doc = (!doc.compatMode || doc.compatMode === 'CSS1Compat') ? doc.documentElement : doc.body;
 function Event(ev){
@@ -2423,7 +2568,6 @@ function Event(ev){
 }
 
 _.extend(Event.prototype, {
-  immediateStop: _.isFalse,
   stop: function(){
     this.preventDefault().stopPropagation();
   },
@@ -2440,7 +2584,7 @@ _.extend(Event.prototype, {
   stopImmediatePropagation: function(){
     if(this.event.stopImmediatePropagation) { this.event.stopImmediatePropagation(); }
   }
-})
+});
 
 
 dom.nextFrame = (function(){
@@ -2448,16 +2592,16 @@ dom.nextFrame = (function(){
                   window.webkitRequestAnimationFrame ||
                   window.mozRequestAnimationFrame|| 
                   function(callback){
-                    setTimeout(callback, 16)
-                  }
+                    return setTimeout(callback, 16)
+                  };
 
     var cancel = window.cancelAnimationFrame ||
                  window.webkitCancelAnimationFrame ||
                  window.mozCancelAnimationFrame ||
                  window.webkitCancelRequestAnimationFrame ||
                  function(tid){
-                    clearTimeout(tid)
-                 }
+                    clearTimeout(tid);
+                 };
   
   return function(callback){
     var id = request(callback);
@@ -2466,7 +2610,7 @@ dom.nextFrame = (function(){
 })();
 
 // 3ks for angular's raf  service
-var k
+var k;
 dom.nextReflow = dom.msie? function(callback){
   return dom.nextFrame(function(){
     k = document.body.offsetWidth;
@@ -2515,7 +2659,7 @@ function ld(array1, array2, equalFn){
         matrix[i][j] = Math.min(
           matrix[i-1][j]+1, //delete
           matrix[i][j-1]+1//add
-          )
+          );
       }
     }
   }
@@ -2525,7 +2669,7 @@ function ld(array1, array2, equalFn){
 // arr1 - old array
 function diffArray(arr2, arr1, diff, diffFn) {
   if(!diff) { return simpleDiff(arr2, arr1); }
-  var matrix = ld(arr1, arr2, diffFn)
+  var matrix = ld(arr1, arr2, diffFn);
   var n = arr1.length;
   var i = n;
   var m = arr2.length;
@@ -2585,7 +2729,7 @@ function diffArray(arr2, arr1, diff, diffFn) {
       }
     } else { //LEAVE
       if(step.index != null){
-        steps.push(step)
+        steps.push(step);
         step = {index: null, add:0, removed:[]};
       }
     }
@@ -2599,19 +2743,19 @@ function diffArray(arr2, arr1, diff, diffFn) {
         m++;
         break;
       case DELELE:
-        step.removed.push(arr1[n])
+        step.removed.push(arr1[n]);
         n++;
         break;
       case UPDATE:
         step.add++;
-        step.removed.push(arr1[n])
+        step.removed.push(arr1[n]);
         n++;
         m++;
         break;
     }
   }
   if(step.index != null){
-    steps.push(step)
+    steps.push(step);
   }
   return steps
 }
@@ -2659,7 +2803,7 @@ function diffObject( now, last, diff ){
 var diff = {
   diffArray: diffArray,
   diffObject: diffObject
-}
+};
 
 var _$6 = util;
 var dom$1  = dom_1;
@@ -2677,7 +2821,7 @@ if(!('ontransitionend' in window)){
     
     // Chrome/Saf (+ Mobile Saf)/Android
     transitionEnd += ' webkitTransitionEnd';
-    transitionProperty = 'webkitTransition'
+    transitionProperty = 'webkitTransition';
   } else if('onotransitionend' in dom$1.tNode || navigator.appName === 'Opera') {
 
     // Opera
@@ -2720,7 +2864,7 @@ animate.inject = function( node, refer ,direction, callback ){
     var enterCallback = function (){
       count++;
       if( count === len ) { callback(); }
-    }
+    };
     if(len === count) { callback(); }
     for( i = 0; i < len; i++ ){
       if(node[i].onenter){
@@ -2732,12 +2876,12 @@ animate.inject = function( node, refer ,direction, callback ){
   }else{
     dom$1.inject( node, refer, direction );
     if(node.onenter){
-      node.onenter(callback)
+      node.onenter(callback);
     }else{
       callback();
     }
   }
-}
+};
 
 /**
  * remove node with animation
@@ -2745,29 +2889,30 @@ animate.inject = function( node, refer ,direction, callback ){
  * @param  {Function} callback [description]
  * @return {[type]}            [description]
  */
+
 animate.remove = function(node, callback){
   if(!node) { return; }
   var count = 0;
   function loop(){
     count++;
-    if(count === len) { callback && callback() }
+    if(count === len) { callback && callback(); }
   }
-  if(Array.isArray(node)){
+  if( Array.isArray(node) ){
     for(var i = 0, len = node.length; i < len ; i++){
-      animate.remove(node[i], loop)
+      animate.remove(node[i], loop);
     }
-    return node;
+    return;
   }
-  if(node.onleave){
+  if(typeof node.onleave ==='function'){
     node.onleave(function(){
-      removeDone(node, callback)
-    })
+      removeDone(node, callback);
+    });
   }else{
-    removeDone(node, callback)
+    removeDone(node, callback);
   }
-}
+};
 
-var removeDone = function (node, callback){
+function removeDone(node, callback){
     dom$1.remove(node);
     callback && callback();
 }
@@ -2790,8 +2935,8 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
       if(mode !== 3){ // mode hold the class
         dom$1.delClass(node, className);
       }
-      dom$1.off(node, animationEnd, onceAnim)
-      dom$1.off(node, transitionEnd, onceAnim)
+      dom$1.off(node, animationEnd, onceAnim);
+      dom$1.off(node, transitionEnd, onceAnim);
 
       callback();
 
@@ -2832,10 +2977,10 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
 
 
 
-  dom$1.on( node, animationEnd, onceAnim )
-  dom$1.on( node, transitionEnd, onceAnim )
+  dom$1.on( node, animationEnd, onceAnim );
+  dom$1.on( node, transitionEnd, onceAnim );
   return onceAnim;
-}
+};
 
 
 animate.startStyleAnimate = function(node, styles, callback){
@@ -2851,18 +2996,18 @@ animate.startStyleAnimate = function(node, styles, callback){
   onceAnim = _$6.once(function onAnimateEnd(){
     if(tid) { clearTimeout(tid); }
 
-    dom$1.off(node, animationEnd, onceAnim)
-    dom$1.off(node, transitionEnd, onceAnim)
+    dom$1.off(node, animationEnd, onceAnim);
+    dom$1.off(node, transitionEnd, onceAnim);
 
     callback();
 
   });
 
-  dom$1.on( node, animationEnd, onceAnim )
-  dom$1.on( node, transitionEnd, onceAnim )
+  dom$1.on( node, animationEnd, onceAnim );
+  dom$1.on( node, transitionEnd, onceAnim );
 
   return onceAnim;
-}
+};
 
 
 /**
@@ -2923,32 +3068,35 @@ var combine = module.exports = {
   node: function(item){
     var children,node, nodes;
     if(!item) { return; }
-    if(item.element) { return item.element; }
     if(typeof item.node === "function") { return item.node(); }
     if(typeof item.nodeType === "number") { return item; }
     if(item.group) { return combine.node(item.group) }
-    if(children = item.children){
-      if(children.length === 1){
-        return combine.node(children[0]);
+
+    item = item.children || item;
+    if( Array.isArray(item )){
+      var len = item.length;
+      if(len === 1){
+        return combine.node(item[0]);
       }
       nodes = [];
-      for(var i = 0, len = children.length; i < len; i++ ){
-        node = combine.node(children[i]);
+      for(var i = 0, len = item.length; i < len; i++ ){
+        node = combine.node(item[i]);
         if(Array.isArray(node)){
-          nodes.push.apply(nodes, node)
+          nodes.push.apply(nodes, node);
         }else if(node) {
-          nodes.push(node)
+          nodes.push(node);
         }
       }
       return nodes;
     }
+    
   },
   // @TODO remove _gragContainer
   inject: function(node, pos ){
     var group = this;
     var fragment = combine.node(group.group || group);
     if(node === false) {
-      animate.remove(fragment)
+      animate.remove(fragment);
       return group;
     }else{
       if(!fragment) { return group; }
@@ -2981,21 +3129,17 @@ var combine = module.exports = {
 
   destroy: function(item, first){
     if(!item) { return; }
-    if(Array.isArray(item)){
+    if( typeof item.nodeType === "number"  ) { return first && dom.remove(item) }
+    if( typeof item.destroy === "function" ) { return item.destroy(first); }
+
+    if( Array.isArray(item)){
       for(var i = 0, len = item.length; i < len; i++ ){
         combine.destroy(item[i], first);
       }
     }
-    var children = item.children;
-    if(typeof item.destroy === "function") { return item.destroy(first); }
-    if(typeof item.nodeType === "number" && first)  { dom.remove(item); }
-    if(children && children.length){
-      combine.destroy(children, true);
-      item.children = null;
-    }
   }
 
-}
+};
 
 
 // @TODO: need move to dom.js
@@ -3012,11 +3156,11 @@ dom.element = function( component, all ){
     } 
   }
   return !all? elements[0]: elements;
-}
+};
 });
 
 var _$7 = util;
-var combine$1 = combine_1
+var combine$1 = combine_1;
 
 function Group$1(list){
   this.children = list || [];
@@ -3035,8 +3179,8 @@ var o = _$7.extend(Group$1.prototype, {
   push: function(item){
     this.children.push( item );
   }
-})
-o.inject = o.$inject = combine$1.inject
+});
+o.inject = o.$inject = combine$1.inject;
 
 
 
@@ -3050,9 +3194,24 @@ var node = node$1;
 var Group = group;
 var dom = dom_1;
 var _ = util;
+var consts = _const;
+var OPTIONS = consts.OPTIONS;
 
 
 var walkers = module.exports = {};
+
+
+
+// used in walkers.list
+// remove block in group
+function removeRange(index, rlen, children){
+  for(var j = 1; j <= rlen; j++){ //removed
+    var removed = children[ index + j ];
+    if(removed) { removed.destroy(true); }
+  }
+  children.splice(index+1, rlen);
+}
+
 
 walkers.list = function(ast, options){
 
@@ -3062,6 +3221,8 @@ walkers.list = function(ast, options){
     extra = options.extra;
   var self = this;
   var group$$1 = new Group([placeholder]);
+  var children = group$$1.children;
+
   var indexName = ast.variable + '_index';
   var keyName = ast.variable + '_key';
   var variable = ast.variable;
@@ -3076,30 +3237,22 @@ walkers.list = function(ast, options){
       extraObj[ indexName ] = index;
       // @FIX keyName
       return track.get( self, extraObj );
-    }
-  }
-
-  function removeRange(index, rlen){
-    for(var j = 0; j< rlen; j++){ //removed
-      var removed = group$$1.children.splice( index + 1, 1)[0];
-      if(removed) { removed.destroy(true); }
-    }
+    };
   }
 
   function addRange(index, end, newList, rawNewValue){
     for(var o = index; o < end; o++){ //add
       // prototype inherit
       var item = newList[o];
-      var data = {};
+      var data = _.createObject(extra);
       updateTarget(data, o, item, rawNewValue);
 
-      data = _.createObject(extra, data);
       var section = self.$compile(ast.body, {
         extra: data,
         namespace:namespace,
         record: true,
         outer: options.outer
-      })
+      });
       section.data = data;
       // autolink
       var insert =  combine.last(group$$1.get(o));
@@ -3107,19 +3260,18 @@ walkers.list = function(ast, options){
         animate.inject(combine.node(section),insert, 'after');
       }
       // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
-      group$$1.children.splice( o + 1 , 0, section);
+      children.splice( o + 1 , 0, section);
     }
   }
 
   function updateTarget(target, index, item, rawNewValue){
-
       target[ indexName ] = index;
       if( rawNewValue ){
         target[ keyName ] = item;
         target[ variable ] = rawNewValue[ item ];
       }else{
         target[ variable ] = item;
-        target[keyName] = null
+        target[keyName] = null;
       }
   }
 
@@ -3154,8 +3306,8 @@ walkers.list = function(ast, options){
         var tIndex = 0;
         while(tIndex < minar){
           if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
-            removeRange(index, 1)
-            addRange(index, index+1, newList, rawNewValue)
+            removeRange(index, 1, children);
+            addRange(index, index+1, newList, rawNewValue);
           }
           removed.shift();
           add--;
@@ -3167,9 +3319,9 @@ walkers.list = function(ast, options){
       // update
       updateRange(m, index, newList, rawNewValue);
 
-      removeRange( index ,rlen)
+      removeRange( index ,rlen, children);
 
-      addRange(index, index+add, newList, rawNewValue)
+      addRange(index, index+add, newList, rawNewValue);
 
       m = index + add - rlen;
       m  = m < 0? 0 : m;
@@ -3191,9 +3343,9 @@ walkers.list = function(ast, options){
     var olen = oldList.length;
     var mlen = Math.min(nlen, olen);
 
-    updateRange(0, mlen, newList, rawNewValue)
+    updateRange(0, mlen, newList, rawNewValue);
     if(nlen < olen){ //need add
-      removeRange(nlen, olen-nlen);
+      removeRange(nlen, olen-nlen, children);
     }else if(nlen > olen){
       addRange(olen, nlen, newList, rawNewValue);
     }
@@ -3215,7 +3367,7 @@ walkers.list = function(ast, options){
 
     // if previous list has , we need to remove the altnated section.
     if( !olen && nlen && group$$1.get(1) ){
-      var altGroup = group$$1.children.pop();
+      var altGroup = children.pop();
       if(altGroup.destroy)  { altGroup.destroy(true); }
     }
 
@@ -3234,8 +3386,8 @@ walkers.list = function(ast, options){
         record: true,
         outer: options.outer,
         namespace: namespace
-      })
-      group$$1.children.push(section);
+      });
+      children.push(section);
       if(placeholder.parentNode){
         animate.inject(combine.node(section), placeholder, 'after');
       }
@@ -3248,12 +3400,8 @@ walkers.list = function(ast, options){
     deep: true
   });
   return group$$1;
-}
+};
 
-
-function updateItem(){
-  
-}
 
 
 // {#include } or {#inc template}
@@ -3278,19 +3426,15 @@ walkers.template = function(ast, options){
         namespace: namespace, 
         extra: extra}) ); 
       if(placeholder.parentNode) {
-        compiled.$inject(placeholder, 'before')
+        compiled.$inject(placeholder, 'before');
       }
-    }, {
-      init: true
-    });
+    }, OPTIONS.INIT);
   }
   return group$$1;
 };
 
 function getListFromValue(value, type){
-  return type === 'object'? _.keys(value): (
-      type === 'array'? value: []
-    )
+  return type === 'array'? value: (type === 'object'? _.keys(value) :  []);
 }
 
 
@@ -3301,14 +3445,14 @@ walkers['if'] = function(ast, options){
   if(options && options.element){ // attribute inteplation
     var update = function(nvalue){
       if(!!nvalue){
-        if(alternate) { combine.destroy(alternate) }
+        if(alternate) { combine.destroy(alternate); }
         if(ast.consequent) { consequent = self.$compile(ast.consequent, {record: true, element: options.element , extra:extra}); }
       }else{
-        if(consequent) { combine.destroy(consequent) }
+        if(consequent) { combine.destroy(consequent); }
         if(ast.alternate) { alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra}); }
       }
-    }
-    this.$watch(ast.test, update, { force: true });
+    };
+    this.$watch(ast.test, update, OPTIONS.FORCE);
     return {
       destroy: function(){
         if(consequent) { combine.destroy(consequent); }
@@ -3334,7 +3478,7 @@ walkers['if'] = function(ast, options){
     }
     if(value){ //true
       if(ast.consequent && ast.consequent.length){
-        consequent = self.$compile( ast.consequent , {record:true, outer: options.outer,namespace: namespace, extra:extra })
+        consequent = self.$compile( ast.consequent , {record:true, outer: options.outer,namespace: namespace, extra:extra });
         // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
         group$$1.push(consequent);
         if(placeholder.parentNode){
@@ -3350,28 +3494,31 @@ walkers['if'] = function(ast, options){
         }
       }
     }
-  }
-  this.$watch(ast.test, update, {force: true, init: true});
+  };
+  this.$watch(ast.test, update, OPTIONS.FORCE_INIT);
 
   return group$$1;
-}
+};
 
 
 walkers.expression = function(ast, options){
   var node = document.createTextNode("");
   this.$watch(ast, function(newval){
-    dom.text(node, "" + (newval == null? "": "" + newval) );
-  },{init: true})
+    dom.text(node,  newval == null? "": String(newval) );
+  }, OPTIONS.STABLE_INIT );
   return node;
-}
+};
 walkers.text = function(ast, options){
-  var node = document.createTextNode(_.convertEntity(ast.text));
+  var text = ast.text;
+  var node = document.createTextNode(
+    text.indexOf('&') !== -1? _.convertEntity(text): text
+  );
   return node;
-}
+};
 
 
 
-var eventReg = /^on-(.+)$/
+var eventReg = /^on-(.+)$/;
 
 /**
  * walkers element (contains component)
@@ -3406,23 +3553,12 @@ walkers.element = function(ast, options){
   element = dom.create(tag, namespace, attrs);
 
   if(group$$1 && !_.isVoidTag(tag)){
-    dom.inject( combine.node(group$$1) , element)
+    dom.inject( combine.node(group$$1) , element);
   }
 
-  // sort before
-  if(!ast.touched){
-    attrs.sort(function(a1, a2){
-      var d1 = Constructor.directive(a1.name),
-        d2 = Constructor.directive(a2.name);
-      if( d1 && d2 ) { return (d2.priority || 1) - (d1.priority || 1); }
-      if(d1) { return 1; }
-      if(d2) { return -1; }
-      if(a2.name === "type") { return 1; }
-      return -1;
-    })
-    ast.touched = true;
-  }
-  // may distinct with if else
+  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
+  _.fixTagAST(ast, Constructor);
+
   var destroies = walkAttributes.call(this, attrs, element, extra);
 
   return {
@@ -3445,16 +3581,16 @@ walkers.element = function(ast, options){
         destroies.forEach(function( destroy ){
           if( destroy ){
             if( typeof destroy.destroy === 'function' ){
-              destroy.destroy()
+              destroy.destroy();
             }else{
               destroy();
             }
           }
-        })
+        });
       }
     }
   }
-}
+};
 
 walkers.component = function(ast, options){
   var this$1 = this;
@@ -3491,14 +3627,14 @@ walkers.component = function(ast, options){
         namespace:namespace, 
         extra: extra, 
         outer: options.outer
-      })
+      });
     }
     
     // @if is r-component . we need to find the target Component
     if(name === 'is' && !Component){
       is = value;
       var componentName = this$1.$get(value, true);
-      Component = Constructor.component(componentName)
+      Component = Constructor.component(componentName);
       if(typeof Component !== 'function') { throw new Error("component " + componentName + " has not registed!"); }
     }
     // bind event proxy
@@ -3517,7 +3653,7 @@ walkers.component = function(ast, options){
       data[name] = value.get(self); 
     }
     if( name === 'ref'  && value != null){
-      ref = value
+      ref = value;
     }
     if( name === 'isolate'){
       // 1: stop: composite -> parent
@@ -3539,19 +3675,19 @@ walkers.component = function(ast, options){
       ctx: this,
       ast: ast.children
     }
-  }
+  };
   var options = {
     namespace: namespace, 
     extra: options.extra
-  }
+  };
 
 
   var component = new Component(definition, options), reflink;
 
 
   if(ref && this.$refs){
-    reflink = Component.directive('ref').link
-    this.$on('$destroy', reflink.call(this, component, ref) )
+    reflink = Component.directive('ref').link;
+    this.$on('$destroy', reflink.call(this, component, ref) );
   }
   if(ref &&  self.$refs) { self.$refs[ref] = component; }
   for(var i = 0, len = attrs.length; i < len; i++){
@@ -3565,10 +3701,10 @@ walkers.component = function(ast, options){
       if( !(isolate & 2) ) 
         { this$1.$watch(value, (function(name, val){
           this.data[name] = val;
-        }).bind(component, name), { sync: true }) }
+        }).bind(component, name), OPTIONS.SYNC); }
       if( value.set && !(isolate & 1 ) ) 
         // sync the data. it force the component don't trigger attr.name's first dirty echeck
-        { component.$watch(name, self.$update.bind(self, value), {init: true}); }
+        { component.$watch(name, self.$update.bind(self, value), OPTIONS.INIT); }
     }
   }
   if(is && is.type === 'expression'  ){
@@ -3581,24 +3717,24 @@ walkers.component = function(ast, options){
       var ncomponent = new Component(definition);
       var component = group$$1.children.pop();
       group$$1.push(ncomponent);
-      ncomponent.$inject(combine.last(component), 'after')
+      ncomponent.$inject(combine.last(component), 'after');
       component.destroy();
       // @TODO  if component changed , we need update ref
       if(ref){
         self.$refs[ref] = ncomponent;
       }
-    }, {sync: true})
+    }, OPTIONS.SYNC);
     return group$$1;
   }
   return component;
-}
+};
 
 function walkAttributes(attrs, element, extra){
   var this$1 = this;
 
-  var bindings = []
+  var bindings = [];
   for(var i = 0, len = attrs.length; i < len; i++){
-    var binding = this$1._walk(attrs[i], {element: element, fromElement: true, attrs: attrs, extra: extra})
+    var binding = this$1._walk(attrs[i], {element: element, fromElement: true, attrs: attrs, extra: extra});
     if(binding) { bindings.push(binding); }
   }
   return bindings;
@@ -3621,14 +3757,28 @@ walkers.attribute = function(ast ,options){
   if(constant) { value = value.get(this); }
 
   if(directive && directive.link){
-    var binding = directive.link.call(self, element, value, name, options.attrs);
+    var extra = {
+      attrs: options.attrs,
+      param: _.getParamObj(this, attr.param) 
+    };
+    var binding = directive.link.call(self, element, value, name, extra);
+    // if update has been passed in , we will  automately watch value for user
+    if( typeof directive.update === 'function'){
+      if(_.isExpr(value)){
+        this.$watch(value, function(val, old){
+          directive.update.call(self, element, val, old, extra); 
+        });
+      }else{
+        directive.update.call(self, element, value, undefined, extra );
+      }
+    }
     if(typeof binding === 'function') { binding = {destroy: binding}; } 
     return binding;
   } else{
     if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
-      }, {init: true});
+      }, OPTIONS.STABLE_INIT);
     }else{
       if(_.isBooleanAttr(name)){
         dom.attr(element, name, true);
@@ -3645,27 +3795,35 @@ walkers.attribute = function(ast ,options){
     }
   }
 
-}
+};
 });
 
 // simplest event emitter 60 lines
 // ===============================
-var slice$1 = [].slice;
 var _$8 = util;
 var API = {
-  $on: function(event, fn) {
+  $on: function(event, fn, desc) {
     var this$1 = this;
 
-    if(typeof event === "object"){
+    if(typeof event === "object" && event){
       for (var i in event) {
-        this$1.$on(i, event[i]);
+        this$1.$on(i, event[i], fn);
       }
     }else{
+      desc = desc || {};
       // @patch: for list
       var context = this;
       var handles = context._handles || (context._handles = {}),
         calls = handles[event] || (handles[event] = []);
-      calls.push(fn);
+      var realFn;
+      if(desc.once){
+        realFn = function(){
+          fn.apply( this, arguments );
+          this.$off(event, fn);
+        };
+        fn.real = realFn;
+      }
+      calls.push(realFn || fn);
     }
     return this;
   },
@@ -3681,6 +3839,7 @@ var API = {
         handles[event] = [];
         return context;
       }
+      fn = fn.real || fn;
       for (var i = 0, len = calls.length; i < len; i++) {
         if (fn === calls[i]) {
           calls.splice(i, 1);
@@ -3696,35 +3855,37 @@ var API = {
     var context = this;
     var handles = context._handles, calls, args, type;
     if(!event) { return; }
-    var args = slice$1.call(arguments, 1);
+    var args = _$8.slice(arguments, 1);
     var type = event;
 
     if(!handles) { return context; }
     if(calls = handles[type.slice(1)]){
       for (var j = 0, len = calls.length; j < len; j++) {
-        calls[j].apply(context, args)
+        calls[j].apply(context, args);
       }
     }
     if (!(calls = handles[type])) { return context; }
     for (var i = 0, len = calls.length; i < len; i++) {
-      calls[i].apply(context, args)
+      calls[i].apply(context, args);
     }
     // if(calls.length) context.$update();
     return context;
   },
   // capture  event
-  $one: function(){
-    
-}
-}
+  $once: function(event, fn){
+    var args = _$8.slice(arguments);
+    args.push({once: true});
+    return this.$on.apply(this, args);
+  }
+};
 // container class
 function Event() {}
-_$8.extend(Event.prototype, API)
+_$8.extend(Event.prototype, API);
 
 Event.mixTo = function(obj){
   obj = typeof obj === "function" ? obj.prototype : obj;
-  _$8.extend(obj, API)
-}
+  _$8.extend(obj, API);
+};
 var event = Event;
 
 var exprCache$1 = env.exprCache;
@@ -3733,14 +3894,14 @@ var parse$1 = {
   expression: function(expr, simple){
     // @TODO cache
     if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-      expr = exprCache$1.get( expr ) || exprCache$1.set( expr, new Parser$2( expr, { mode: 2, expression: true } ).expression() )
+      expr = exprCache$1.get( expr ) || exprCache$1.set( expr, new Parser$2( expr, { mode: 2, expression: true } ).expression() );
     }
     if(expr) { return expr; }
   },
   parse: function(template){
     return new Parser$2(template).parse();
   }
-}
+};
 
 var _$9 = util;
 var parseExpression = parse$1.expression;
@@ -3756,16 +3917,17 @@ var methods = {
 
     var get, once, test, rlen, extra = this.__ext__; //records length
     if(!this._watchers) { this._watchers = []; }
+    if(!this._watchersForStable) { this._watchersForStable = []; }
 
     options = options || {};
     if(options === true){
-       options = { deep: true }
+       options = { deep: true };
     }
     var uid = _$9.uid('w_');
     if(Array.isArray(expr)){
       var tests = [];
       for(var i = 0,len = expr.length; i < len; i++){
-          tests.push(this$1.$expression(expr[i]).get)
+          tests.push(this$1.$expression(expr[i]).get);
       }
       var prev = [];
       test = function(context){
@@ -3778,7 +3940,7 @@ var methods = {
           }
         }
         return equal? false: prev;
-      }
+      };
     }else{
       if(typeof expr === 'function'){
         get = expr.bind(this);      
@@ -3800,40 +3962,49 @@ var methods = {
       test: test,
       deep: options.deep,
       last: options.sync? get(this): options.last
-    }
-    
-    this._watchers.push( watcher );
+    };
 
+
+    this[options.stable? '_watchersForStable': '_watchers'].push(watcher);
+    
     rlen = this._records && this._records.length;
-    if(rlen) { this._records[rlen-1].push(uid) }
+    if(rlen) { this._records[rlen-1].push(watcher); }
     // init state.
     if(options.init === true){
       var prephase = this.$phase;
       this.$phase = 'digest';
-      this._checkSingleWatch( watcher, this._watchers.length-1 );
+      this._checkSingleWatch( watcher);
       this.$phase = prephase;
     }
     return watcher;
   },
-  $unwatch: function(uid){
+  $unwatch: function( watcher ){
     var this$1 = this;
 
-    uid = uid.id || uid;
-    if(!this._watchers) { this._watchers = []; }
-    if(Array.isArray(uid)){
-      for(var i =0, len = uid.length; i < len; i++){
-        this$1.$unwatch(uid[i]);
-      }
-    }else{
-      var watchers = this._watchers, watcher, wlen;
-      if(!uid || !watchers || !(wlen = watchers.length)) { return; }
-      for(;wlen--;){
-        watcher = watchers[wlen];
-        if(watcher && watcher.id === uid ){
-          watchers.splice(wlen, 1);
+    if(!this._watchers || !watcher) { return; }
+    var watchers = this._watchers;
+    var type = typeof watcher;
+
+    if(type === 'object'){
+      var len = watcher.length;
+      if(!len){
+        watcher.removed = true;
+      }else{
+        while( (len--) >= 0 ){
+          this$1.$unwatch(watcher[len]);
         }
       }
+    }else if(type === 'number'){
+      var id = watcher;
+      watcher =  _$9.findItem( watchers, function(item){
+        return item.id === id;
+      } );
+      if(!watcher) { watcher = _$9.findItem(this._watchersForStable, function( item ){
+        return item.id === id
+      }); }
+      return this.$unwatch(watcher);
     }
+    return this;
   },
   $expression: function(value){
     return this._touchExpr(parseExpression(value))
@@ -3855,21 +4026,46 @@ var methods = {
         throw Error('there may a circular dependencies reaches')
       }
     }
-    if( n > 0 && this.$emit) { this.$emit("$update"); }
+    // stable watch is dirty
+    var stableDirty =  this._digest(true);
+
+    if( (n > 0 || stableDirty) && this.$emit) {
+      this.$emit("$update");
+      if (this.devtools) {
+        this.devtools.emit("flush", this);
+      }
+    }
     this.$phase = null;
   },
   // private digest logic
-  _digest: function(){
+  _digest: function(stable){
     var this$1 = this;
 
 
-    var watchers = this._watchers;
+    var watchers = !stable? this._watchers: this._watchersForStable;
     var dirty = false, children, watcher, watcherDirty;
-    if(watchers && watchers.length){
-      for(var i = 0, len = watchers.length;i < len; i++){
+    var len = watchers && watchers.length;
+    if(len){
+      var mark = 0, needRemoved=0;
+      for(var i =0; i < len; i++ ){
         watcher = watchers[i];
-        watcherDirty = this$1._checkSingleWatch(watcher, i);
-        if(watcherDirty) { dirty = true; }
+        var shouldRemove = !watcher ||  watcher.removed;
+        if( shouldRemove ){
+          needRemoved += 1;
+        }else{
+          watcherDirty = this$1._checkSingleWatch(watcher);
+          if(watcherDirty) { dirty = true; }
+        }
+        // remove when encounter first unmoved item or touch the end
+        if( !shouldRemove || i === len-1 ){
+          if( needRemoved ){
+            watchers.splice(mark, needRemoved );          
+            len -= needRemoved;
+            i -= needRemoved;
+            needRemoved = 0;
+          }
+          mark = i+1;
+        }
       }
     }
     // check children's dirty.
@@ -3877,14 +4073,13 @@ var methods = {
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
         var child = children[m];
-        
-        if(child && child._digest()) { dirty = true; }
+        if(child && child._digest(stable)) { dirty = true; }
       }
     }
     return dirty;
   },
   // check a single one watcher 
-  _checkSingleWatch: function(watcher, i){
+  _checkSingleWatch: function(watcher){
     var dirty = false;
     if(!watcher) { return; }
 
@@ -3894,33 +4089,37 @@ var methods = {
 
       now = watcher.get(this);
       last = watcher.last;
-      tlast = _$9.typeOf(last);
-      tnow = _$9.typeOf(now);
-      eq = true, diff$$1;
 
-      // !Object
-      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
-        // Array
-        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          diff$$1 = diffArray$1(now, watcher.last || [], watcher.diff)
-          if( tlast !== 'array' || diff$$1 === true || diff$$1.length ) { dirty = true; }
-        }else{
-          eq = _$9.equals( now, last );
-          if( !eq || watcher.force ){
-            watcher.force = null;
-            dirty = true; 
+      if(now !== last || watcher.force){
+        tlast = _$9.typeOf(last);
+        tnow = _$9.typeOf(now);
+        eq = true; 
+
+        // !Object
+        if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+          // Array
+          if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+            diff$$1 = diffArray$1(now, watcher.last || [], watcher.diff);
+            if( tlast !== 'array' || diff$$1 === true || diff$$1.length ) { dirty = true; }
+          }else{
+            eq = _$9.equals( now, last );
+            if( !eq || watcher.force ){
+              watcher.force = null;
+              dirty = true; 
+            }
           }
+        }else{
+          diff$$1 =  diffObject$1( now, last, watcher.diff );
+          if( diff$$1 === true || diff$$1.length ) { dirty = true; }
         }
-      }else{
-        diff$$1 =  diffObject$1( now, last, watcher.diff );
-        if( diff$$1 === true || diff$$1.length ) { dirty = true; }
       }
+
     } else{
       // @TODO 是否把多重改掉
       var result = watcher.test(this);
       if(result){
         dirty = true;
-        watcher.fn.apply(this, result)
+        watcher.fn.apply(this, result);
       }
     }
     if(dirty && !watcher.test){
@@ -3929,8 +4128,8 @@ var methods = {
       }else{
         watcher.last = now;
       }
-      watcher.fn.call(this, now, last, diff$$1)
-      if(watcher.once) { this._watchers.splice(i, 1); }
+      watcher.fn.call(this, now, last, diff$$1);
+      if(watcher.once) { this.$unwatch(watcher); }
     }
 
     return dirty;
@@ -3947,7 +4146,7 @@ var methods = {
     var this$1 = this;
 
     if(path != null){
-      var type = _$9.typeOf(path);
+      var type = typeof (path);
       if( type === 'string' || path.type === 'expression' ){
         path = this.$expression(path);
         path.set(this, value);
@@ -3955,7 +4154,7 @@ var methods = {
         path.call(this, this.data);
       }else{
         for(var i in path) {
-          this$1.$set(i, path[i])
+          this$1.$set(i, path[i]);
         }
       }
     }
@@ -3974,11 +4173,11 @@ var methods = {
     } while(rootParent)
 
     var prephase =rootParent.$phase;
-    rootParent.$phase = 'digest'
+    rootParent.$phase = 'digest';
 
     this.$set.apply(this, arguments);
 
-    rootParent.$phase = prephase
+    rootParent.$phase = prephase;
 
     rootParent.$digest();
     return this;
@@ -3991,16 +4190,16 @@ var methods = {
   _release: function(){
     return this._records.pop();
   }
-}
+};
 
 
-_$9.extend(Watcher$1.prototype, methods)
+_$9.extend(Watcher$1.prototype, methods);
 
 
 Watcher$1.mixTo = function(obj){
   obj = typeof obj === "function" ? obj.prototype : obj;
   return _$9.extend(obj, methods)
-}
+};
 
 var watcher = Watcher$1;
 
@@ -4018,14 +4217,14 @@ f.json = {
   set: function( value ){
     return typeof JSON !== 'undefined'? JSON.parse(value) : value;
   }
-}
+};
 
 // last: one-way
 //  - get: return the last item in list
 //  - example: `{ list|last }`
 f.last = function(arr){
   return arr && arr[arr.length - 1];
-}
+};
 
 // average: one-way
 //  - get: copute the average of the list
@@ -4033,7 +4232,7 @@ f.last = function(arr){
 f.average = function(array, key){
   array = array || [];
   return array.length? f.total(array, key)/ array.length : 0;
-}
+};
 
 
 // total: one-way
@@ -4044,9 +4243,9 @@ f.total = function(array, key){
   if(!array) { return; }
   array.forEach(function( item ){
     total += key? item[key] : item;
-  })
+  });
   return total;
-}
+};
 
 // var basicSortFn = function(a, b){return b - a}
 
@@ -4105,12 +4304,22 @@ var Regular$1 = function(definition, options){
 
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
-  definition.events = definition.events || {};
-  if(this.data) { _$1.extend(definition.data, this.data); }
-  if(this.computed) { _$1.extend(definition.computed, this.computed); }
-  if(this.events) { _$1.extend(definition.events, this.events); }
+  if( this.data ) { _$1.extend( definition.data, this.data ); }
+  if( this.computed ) { _$1.extend( definition.computed, this.computed ); }
+
+  var listeners = this._eventListeners || [];
+  var normListener;
+  // hanle initialized event binding
+  if( definition.events){
+    normListener = _$1.normListener(definition.events);
+    if(normListener.length){
+      listeners = listeners.concat(normListener);
+    }
+    delete definition.events;
+  }
 
   _$1.extend(this, definition, true);
+
   if(this.$parent){
      this.$parent._append(this);
   }
@@ -4138,8 +4347,11 @@ var Regular$1 = function(definition, options){
   this.computed = handleComputed(this.computed);
   this.$root = this.$root || this;
   // if have events
-  if(this.events){
-    this.$on(this.events);
+
+  if(listeners && listeners.length){
+    listeners.forEach(function( item ){
+      this.$on(item.type, item.listener);
+    }.bind(this));
   }
   this.$emit("$config");
   this.config && this.config(this.data);
@@ -4154,7 +4366,7 @@ var Regular$1 = function(definition, options){
       namespace: options.namespace,
       extra: options.extra,
       record: true
-    })
+    });
   }
   // handle computed
   if(template){
@@ -4174,8 +4386,17 @@ var Regular$1 = function(definition, options){
   env$2.isRunning = prevRunning;
 
   // children is not required;
-}
+  
+  if (this.devtools) {
+    this.devtools.emit("init", this);
+  }
+};
 
+// check if regular devtools hook exists
+var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
+if (devtools) {
+  Regular$1.prototype.devtools = devtools;
+}
 
 walkers && (walkers.Regular = Regular$1);
 
@@ -4226,34 +4447,38 @@ _$1.extend(Regular$1, {
   directive: function(name, cfg){
     var this$1 = this;
 
+    if(!name) { return; }
 
-    if(_$1.typeOf(name) === "object"){
+    var type = typeof name;
+    if(type === 'object' && !cfg){
       for(var k in name){
         if(name.hasOwnProperty(k)) { this$1.directive(k, name[k]); }
       }
       return this;
     }
-    var type = _$1.typeOf(name);
     var directives = this._directives, directive;
     if(cfg == null){
-      if( type === "string" && (directive = directives[name]) ) { return directive; }
-      else{
-        var regexp = directives.__regexp__;
-        for(var i = 0, len = regexp.length; i < len ; i++){
-          directive = regexp[i];
-          var test = directive.regexp.test(name);
-          if(test) { return directive; }
+      if( type === 'string' ){
+        if(directive = directives[name]) { return directive; }
+        else{
+
+          var regexp = directives.__regexp__;
+          for(var i = 0, len = regexp.length; i < len ; i++){
+            directive = regexp[i];
+            var test = directive.regexp.test(name);
+            if(test) { return directive; }
+          }
         }
       }
-      return undefined;
+    }else{
+      if( typeof cfg === 'function') { cfg = { link: cfg }; } 
+      if( type === 'string' ) { directives[name] = cfg; }
+      else{
+        cfg.regexp = name;
+        directives.__regexp__.push(cfg);
+      }
+      return this
     }
-    if(typeof cfg === 'function') { cfg = { link: cfg } } 
-    if(type === 'string') { directives[name] = cfg; }
-    else if(type === 'regexp'){
-      cfg.regexp = name;
-      directives.__regexp__.push(cfg)
-    }
-    return this
   },
   plugin: function(name, fn){
     var plugins = this._plugins;
@@ -4286,8 +4511,8 @@ _$1.extend(Regular$1, {
     if( Array.isArray( name ) ){
       return name.forEach(Regular$1._addProtoInheritCache);
     }
-    var cacheKey = "_" + name + "s"
-    Regular$1._protoInheritCache.push(name)
+    var cacheKey = "_" + name + "s";
+    Regular$1._protoInheritCache.push(name);
     Regular$1[cacheKey] = {};
     if(Regular$1[name]) { return; }
     Regular$1[name] = function(key, cfg){
@@ -4304,7 +4529,7 @@ _$1.extend(Regular$1, {
       if(cfg == null) { return cache[key]; }
       cache[key] = transform? transform(cfg) : cfg;
       return this;
-    }
+    };
   },
   _inheritConfig: function(self, supr){
 
@@ -4316,7 +4541,7 @@ _$1.extend(Regular$1, {
       self[key] = supr[key];
       var cacheKey = '_' + key + 's';
       if(supr[cacheKey]) { self[cacheKey] = _$1.createObject(supr[cacheKey]); }
-    })
+    });
     return self;
   }
 
@@ -4324,11 +4549,11 @@ _$1.extend(Regular$1, {
 
 extend$1(Regular$1);
 
-Regular$1._addProtoInheritCache("component")
+Regular$1._addProtoInheritCache("component");
 
 Regular$1._addProtoInheritCache("filter", function(cfg){
   return typeof cfg === "function"? {get: cfg}: cfg;
-})
+});
 
 
 events.mixTo(Regular$1);
@@ -4340,20 +4565,24 @@ Regular$1.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit("$destroy");
+    this._watchers = null;
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
-    this._watchers = null;
-    this._children = [];
+    this._children = null;
+    this.$root = null;
+    this._handles = null;
+    this.$refs = null;
     var parent = this.$parent;
-    if(parent){
+    if(parent && parent._children){
       var index = parent._children.indexOf(this);
       parent._children.splice(index,1);
     }
     this.$parent = null;
-    this.$root = null;
-    this._handles = null;
-    this.$refs = null;
+
+    if (this.devtools) {
+      this.devtools.emit("destroy", this);
+    }
   },
 
   /**
@@ -4365,7 +4594,7 @@ Regular$1.implement({
   $compile: function(ast, options){
     options = options || {};
     if(typeof ast === 'string'){
-      ast = new Parser(ast).parse()
+      ast = new Parser(ast).parse();
     }
     var preExt = this.__ext__,
       record = options.record, 
@@ -4380,7 +4609,7 @@ Regular$1.implement({
       var self = this;
       if(records.length){
         // auto destroy all wather;
-        group$$1.ondestroy = function(){ self.$unwatch(records); }
+        group$$1.ondestroy = function(){ self.$unwatch(records); };
       }
     }
     if(options.extra) { this.__ext__ = preExt; }
@@ -4418,7 +4647,7 @@ Regular$1.implement({
 
     var type = _$1.typeOf(expr1);
     if( expr1.type === 'expression' || type === 'string' ){
-      this._bind(component, expr1, expr2)
+      this._bind(component, expr1, expr2);
     }else if( type === "array" ){ // multiply same path binding through array
       for(var i = 0, len = expr1.length; i < len; i++){
         this$1._bind(component, expr1[i]);
@@ -4472,36 +4701,37 @@ Regular$1.implement({
     // set is need to operate setting ;
     if(expr2.set){
       var wid1 = this.$watch( expr1, function(value){
-        component.$update(expr2, value)
+        component.$update(expr2, value);
       });
       component.$on('$destroy', function(){
-        self.$unwatch(wid1)
-      })
+        self.$unwatch(wid1);
+      });
     }
     if(expr1.set){
       var wid2 = component.$watch(expr2, function(value){
-        self.$update(expr1, value)
+        self.$update(expr1, value);
       });
       // when brother destroy, we unlink this watcher
-      this.$on('$destroy', component.$unwatch.bind(component,wid2))
+      this.$on('$destroy', component.$unwatch.bind(component,wid2));
     }
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
   },
-  _walk: function(ast, arg1){
+  _walk: function(ast, opt){
     var this$1 = this;
 
-    if( _$1.typeOf(ast) === 'array' ){
+    if( Array.isArray(ast)  ){
+      var len = ast.length;
+      if(!len) { return; }
       var res = [];
-
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push( this$1._walk(ast[i], arg1) );
+      for(var i = 0; i < len; i++){
+        var ret = this$1._walk(ast[i], opt); 
+        if(ret) { res.push( ret ); }
       }
-
       return new Group(res);
     }
     if(typeof ast === 'string') { return doc.createTextNode(ast) }
-    return walkers[ast.type || "default"].call(this, ast, arg1);
+    return walkers[ast.type || "default"].call(this, ast, opt);
   },
   _append: function(component){
     this._children.push(component);
@@ -4526,29 +4756,37 @@ Regular$1.implement({
   _touchExpr: function(expr){
     var  rawget, ext = this.__ext__, touched = {};
     if(expr.type !== 'expression' || expr.touched) { return expr; }
-    rawget = expr.get || (expr.get = new Function(_$1.ctxName, _$1.extName , _$1.prefix+ "return (" + expr.body + ")"));
+
+    rawget = expr.get;
+    if(!rawget){
+      rawget = expr.get = new Function(_$1.ctxName, _$1.extName , _$1.prefix+ "return (" + expr.body + ")");
+      expr.body = null;
+    }
     touched.get = !ext? rawget: function(context){
       return rawget(context, ext)
-    }
+    };
 
     if(expr.setbody && !expr.set){
       var setbody = expr.setbody;
-      expr.set = function(ctx, value, ext){
-        expr.set = new Function(_$1.ctxName, _$1.setName , _$1.extName, _$1.prefix + setbody);          
-        return expr.set(ctx, value, ext);
+      var filters = expr.filters;
+      var self = this;
+      if(!filters || !_$1.some(filters, function(filter){ return !self._f_(filter).set }) ){
+        expr.set = function(ctx, value, ext){
+          expr.set = new Function(_$1.ctxName, _$1.setName , _$1.extName, _$1.prefix + setbody);          
+          return expr.set(ctx, value, ext);
+        };
       }
-      expr.setbody = null;
+      expr.filters = expr.setbody = null;
     }
     if(expr.set){
       touched.set = !ext? expr.set : function(ctx, value){
         return expr.set(ctx, value, ext);
-      }
+      };
     }
-    _$1.extend(touched, {
-      type: 'expression',
-      touched: true,
-      once: expr.once || expr.constant
-    })
+
+    touched.type = 'expression';
+    touched.touched = true;
+    touched.once = expr.once || expr.constant;
     return touched
   },
   // find filter
@@ -4561,13 +4799,12 @@ Regular$1.implement({
   // simple accessor get
   _sg_:function(path, defaults, ext){
     if(typeof ext !== 'undefined'){
-      // if(path === "demos")  debugger
       var computed = this.computed,
         computedProperty = computed[path];
       if(computedProperty){
         if(computedProperty.type==='expression' && !computedProperty.get) { this._touchExpr(computedProperty); }
         if(computedProperty.get)  { return computedProperty.get(this); }
-        else { _$1.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn") }
+        else { _$1.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn"); }
       }
   }
     if(typeof defaults === "undefined" || typeof path == "undefined" ){
@@ -4604,7 +4841,7 @@ Regular$1.implement({
     }
     if(computedProperty) {
       if(computedProperty.set) { return computedProperty.set(this, value); }
-      else { _$1.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "warn" ) }
+      else { _$1.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "warn" ); }
     }
     data[path] = value;
     return value;
@@ -4614,7 +4851,7 @@ Regular$1.implement({
 Regular$1.prototype.inject = function(){
   _$1.log("use $inject instead of inject", "error");
   return this.$inject.apply(this, arguments);
-}
+};
 
 
 // only one builtin filter
@@ -4644,7 +4881,7 @@ var handleComputed = (function(){
     if(!computed) { return; }
     var parsedComputed = {}, handle, pair, type;
     for(var i in computed){
-      handle = computed[i]
+      handle = computed[i];
       type = typeof handle;
 
       if(handle.type === 'expression'){
@@ -4652,7 +4889,7 @@ var handleComputed = (function(){
         continue;
       }
       if( type === "string" ){
-        parsedComputed[i] = parse.expression(handle)
+        parsedComputed[i] = parse.expression(handle);
       }else{
         pair = parsedComputed[i] = {type: 'expression'};
         if(type === "function" ){
@@ -4709,17 +4946,17 @@ Regular$2.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
           dom$2.off(preParent, type, delegateEvent);
         }
         if(newParent) { dom$2.on(this.parentNode, type, delegateEvent); }
-      })
+      });
     }
     root.$on("$destroy", function(){
-      if(root.parentNode) { dom$2.off(root.parentNode, type, delegateEvent) }
+      if(root.parentNode) { dom$2.off(root.parentNode, type, delegateEvent); }
       _delegates[type] = null;
-    })
+    });
   }
   var delegate = {
     element: elem,
     fire: fire
-  }
+  };
   _delegates[type].push( delegate );
 
   return function(){
@@ -4740,7 +4977,7 @@ function matchParent(ev , delegates, stop){
     for( var i = 0, len = delegates.length; i < len; i++ ){
       pair = delegates[i];
       if(pair && pair.element === target){
-        pair.fire(ev)
+        pair.fire(ev);
       }
     }
     target = target.parentNode;
@@ -4751,31 +4988,49 @@ function matchParent(ev , delegates, stop){
 var _$12 = util;
 var dom$3 = dom_1;
 var Regular$3 = Regular_1;
+var OPTIONS = _const.OPTIONS;
+var STABLE = OPTIONS.STABLE;
+var hasInput;
 
 var modelHandlers = {
   "text": initText,
   "select": initSelect,
   "checkbox": initCheckBox,
   "radio": initRadio
-}
+};
 
 
 // @TODO
 
 
+// autoUpdate directive for select element
+// to fix r-model issue , when handle dynamic options
+
+
+/**
+ * <select r-model={name}> 
+ *   <r-option value={value} ></r-option>
+ * </select>
+ */
+
+
 // two-way binding with r-model
 // works on input, textarea, checkbox, radio, select
 
-Regular$3.directive("r-model", function(elem, value){
-  var tag = elem.tagName.toLowerCase();
-  var sign = tag;
-  if(sign === "input") { sign = elem.type || "text"; }
-  else if(sign === "textarea") { sign = "text"; }
-  if(typeof value === "string") { value = this.$expression(value); }
 
-  if( modelHandlers[sign] ) { return modelHandlers[sign].call(this, elem, value); }
-  else if(tag === "input"){
-    return modelHandlers.text.call(this, elem, value);
+Regular$3.directive("r-model", {
+  param: ['throttle', 'lazy'],
+  link: function( elem, value, name, extra ){
+    var tag = elem.tagName.toLowerCase();
+    var sign = tag;
+    if(sign === "input") { sign = elem.type || "text"; }
+    else if(sign === "textarea") { sign = "text"; }
+    if(typeof value === "string") { value = this.$expression(value); }
+
+    if( modelHandlers[sign] ) { return modelHandlers[sign].call(this, elem, value, extra); }
+    else if(tag === "input"){
+      return modelHandlers.text.call(this, elem, value, extra);
+    }
   }
 });
 
@@ -4783,16 +5038,17 @@ Regular$3.directive("r-model", function(elem, value){
 
 // binding <select>
 
-function initSelect( elem, parsed){
+function initSelect( elem, parsed, extra){
   var self = this;
-  var wc =this.$watch(parsed, function(newValue){
-    var children = _$12.slice(elem.getElementsByTagName('option'))
-    children.forEach(function(node, index){
-      if(node.value == newValue){
-        elem.selectedIndex = index;
+  var wc = this.$watch(parsed, function(newValue){
+    var children = elem.getElementsByTagName('option');
+    for(var i =0, len = children.length ; i < len; i++){
+      if(children[i].value == newValue){
+        elem.selectedIndex = i;
+        break;
       }
-    })
-  });
+    }
+  }, STABLE);
 
   function handler(){
     parsed.set(self, this.value);
@@ -4800,61 +5056,81 @@ function initSelect( elem, parsed){
     self.$update();
   }
 
-  dom$3.on(elem, "change", handler);
+  dom$3.on( elem, "change", handler );
   
   if(parsed.get(self) === undefined && elem.value){
-     parsed.set(self, elem.value);
+    parsed.set(self, elem.value);
   }
+
   return function destroy(){
     dom$3.off(elem, "change", handler);
   }
 }
 
 // input,textarea binding
+function initText(elem, parsed, extra){
+  var param = extra.param;
+  var throttle, lazy = param.lazy;
 
-function initText(elem, parsed){
+  if('throttle' in param){
+    // <input throttle r-model>
+    if(param[throttle] === true){
+      throttle = 400;
+    }else{
+      throttle = parseInt(param.throttle , 10);
+    }
+  }
+
   var self = this;
   var wc = this.$watch(parsed, function(newValue){
     if(elem.value !== newValue) { elem.value = newValue == null? "": "" + newValue; }
-  });
+  }, STABLE);
 
   // @TODO to fixed event
   var handler = function (ev){
     var that = this;
     if(ev.type==='cut' || ev.type==='paste'){
       _$12.nextTick(function(){
-        var value = that.value
+        var value = that.value;
         parsed.set(self, value);
         wc.last = value;
         self.$update();
-      })
+      });
     }else{
-        var value = that.value
+        var value = that.value;
         parsed.set(self, value);
         wc.last = value;
         self.$update();
     }
   };
 
-  if(dom$3.msie !== 9 && "oninput" in dom$3.tNode ){
-    elem.addEventListener("input", handler );
+  if(throttle && !lazy){
+    var preHandle = handler, tid;
+    handler = _$12.throttle(handler, throttle);
+  }
+
+  if(hasInput === undefined){
+    hasInput = dom$3.msie !== 9 && "oninput" in document.createElement('input');
+  }
+
+  if(lazy){
+    dom$3.on(elem, 'change', handler);
   }else{
-    dom$3.on(elem, "paste", handler)
-    dom$3.on(elem, "keyup", handler)
-    dom$3.on(elem, "cut", handler)
-    dom$3.on(elem, "change", handler)
+    if( hasInput){
+      elem.addEventListener("input", handler );
+    }else{
+      dom$3.on(elem, "paste keyup cut change", handler);
+    }
   }
   if(parsed.get(self) === undefined && elem.value){
      parsed.set(self, elem.value);
   }
   return function (){
-    if(dom$3.msie !== 9 && "oninput" in dom$3.tNode ){
+    if(lazy) { return dom$3.off(elem, "change", handler); }
+    if( hasInput ){
       elem.removeEventListener("input", handler );
     }else{
-      dom$3.off(elem, "paste", handler)
-      dom$3.off(elem, "keyup", handler)
-      dom$3.off(elem, "cut", handler)
-      dom$3.off(elem, "change", handler)
+      dom$3.off(elem, "paste keyup cut change", handler);
     }
   }
 }
@@ -4866,22 +5142,22 @@ function initCheckBox(elem, parsed){
   var self = this;
   var watcher = this.$watch(parsed, function(newValue){
     dom$3.attr(elem, 'checked', !!newValue);
-  });
+  }, STABLE);
 
   var handler = function handler(){
     var value = this.checked;
     parsed.set(self, value);
     watcher.last = value;
     self.$update();
-  }
-  if(parsed.set) { dom$3.on(elem, "change", handler) }
+  };
+  if(parsed.set) { dom$3.on(elem, "change", handler); }
 
   if(parsed.get(self) === undefined){
     parsed.set(self, !!elem.checked);
   }
 
   return function destroy(){
-    if(parsed.set) { dom$3.off(elem, "change", handler) }
+    if(parsed.set) { dom$3.off(elem, "change", handler); }
   }
 }
 
@@ -4893,15 +5169,15 @@ function initRadio(elem, parsed){
   var wc = this.$watch(parsed, function( newValue ){
     if(newValue == elem.value) { elem.checked = true; }
     else { elem.checked = false; }
-  });
+  }, STABLE);
 
 
   var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
     self.$update();
-  }
-  if(parsed.set) { dom$3.on(elem, "change", handler) }
+  };
+  if(parsed.set) { dom$3.on(elem, "change", handler); }
   // beacuse only after compile(init), the dom structrue is exsit. 
   if(parsed.get(self) === undefined){
     if(elem.checked) {
@@ -4910,7 +5186,7 @@ function initRadio(elem, parsed){
   }
 
   return function destroy(){
-    if(parsed.set) { dom$3.off(elem, "change", handler) }
+    if(parsed.set) { dom$3.off(elem, "change", handler); }
   }
 }
 
@@ -4922,6 +5198,9 @@ var animate = animate_1;
 var Regular = Regular_1;
 var consts = _const;
 var namespaces = consts.NAMESPACE;
+var OPTIONS = consts.OPTIONS;
+var STABLE = OPTIONS.STABLE;
+var DEEP_STABLE = {deep: true, stable: true};
 
 
 
@@ -4935,7 +5214,7 @@ module.exports = {
   'r-class': function(elem, value){
 
     if(typeof value=== 'string'){
-      value = _.fixObjStr(value)
+      value = _.fixObjStr(value);
     }
     var isNotHtml = elem.namespaceURI && elem.namespaceURI !== namespaces.html;
     this.$watch(value, function(nvalue){
@@ -4949,22 +5228,22 @@ module.exports = {
       } }
       className = className.trim();
       if(isNotHtml){
-        dom.attr(elem, 'class', className)
+        dom.attr(elem, 'class', className);
       }else{
-        elem.className = className
+        elem.className = className;
       }
-    },true);
+    }, DEEP_STABLE);
   },
   // **warn**: style inteplation will override this directive 
   'r-style': function(elem, value){
     if(typeof value=== 'string'){
-      value = _.fixObjStr(value)
+      value = _.fixObjStr(value);
     }
     this.$watch(value, function(nvalue){
       for(var i in nvalue) { if(nvalue.hasOwnProperty(i)){
         dom.css(elem, i, nvalue[i]);
       } }
-    },true);
+    },DEEP_STABLE);
   },
   // when expression is evaluate to true, the elem will add display:none
   // Example: <div r-hide={{items.length > 0}}></div>
@@ -4978,11 +5257,11 @@ module.exports = {
         if(bool){
           if(elem.onleave){
             compelete = elem.onleave(function(){
-              elem.style.display = "none"
+              elem.style.display = "none";
               compelete = null;
-            })
+            });
           }else{
-            elem.style.display = "none"
+            elem.style.display = "none";
           }
           
         }else{
@@ -4992,7 +5271,7 @@ module.exports = {
             elem.onenter();
           }
         }
-      });
+      }, STABLE);
     }else if(!!value){
       elem.style.display = "none";
     }
@@ -5000,8 +5279,8 @@ module.exports = {
   'r-html': function(elem, value){
     this.$watch(value, function(nvalue){
       nvalue = nvalue || "";
-      dom.html(elem, nvalue)
-    }, {force: true});
+      dom.html(elem, nvalue);
+    }, {force: true, stable: true});
   },
   'ref': {
     accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
@@ -5013,7 +5292,7 @@ module.exports = {
           cval = nval;
           if(refs[oval] === elem) { refs[oval] = null; }
           if(cval) { refs[cval] = elem; }
-        })
+        }, STABLE);
       }else{
         refs[cval = value] = elem;
       }
@@ -5022,7 +5301,7 @@ module.exports = {
       }
     }
   }
-}
+};
 
 Regular.directive(module.exports);
 });
@@ -5078,20 +5357,20 @@ function createSeed(type){
       }
     },
     push: function(step){
-      steps.push(step)
+      steps.push(step);
     }
-  }
+  };
 
   return out;
 }
 
-Regular$4._addProtoInheritCache("animation")
+Regular$4._addProtoInheritCache("animation");
 
 
 // builtin animation
 Regular$4.animation({
   "wait": function( step ){
-    var timeout = parseInt( step.param ) || 0
+    var timeout = parseInt( step.param ) || 0;
     return function(done){
       // _.log("delay " + timeout)
       setTimeout( done, timeout );
@@ -5113,7 +5392,7 @@ Regular$4.animation({
       // _.log(step.param, 'call')
       fn(self);
       self.$update();
-      done()
+      done();
     }
   },
   "emit": function(step){
@@ -5146,7 +5425,7 @@ Regular$4.animation({
         styles[name] = value;
         valid = true;
       }
-    })
+    });
 
     return function(done){
       if(valid){
@@ -5156,7 +5435,7 @@ Regular$4.animation({
       }
     }
   }
-})
+});
 
 
 
@@ -5179,12 +5458,12 @@ function processAnimate( element, value ){
     command, param , current = 0, tmp, animator, self = this;
 
   function reset( type ){
-    seed && seeds.push( seed )
+    seed && seeds.push( seed );
     seed = createSeed( type );
   }
 
   function whenCallback(start, value){
-    if( !!value ) { start() }
+    if( !!value ) { start(); }
   }
 
   function animationDestroy(element){
@@ -5228,7 +5507,7 @@ function processAnimate( element, value ){
       continue;
     }
 
-    var animator =  Component.animation(command) 
+    var animator =  Component.animation(command); 
     if( animator && seed ){
       seed.push(
         animator.call(this$1,{
@@ -5236,7 +5515,7 @@ function processAnimate( element, value ){
           done: seed.done,
           param: param 
         })
-      )
+      );
     }else{
       throw Error( animator? "you should start with `on` or `event` in animation" : ("undefined animator 【" + command +"】" ));
     }
@@ -5246,14 +5525,14 @@ function processAnimate( element, value ){
     return function(){
       destroies.forEach(function(destroy){
         destroy();
-      })
+      });
     }
   }
 }
 
 
-Regular$4.directive( "r-animation", processAnimate)
-Regular$4.directive( "r-anim", processAnimate)
+Regular$4.directive( "r-animation", processAnimate);
+Regular$4.directive( "r-anim", processAnimate);
 
 var Regular$5 = Regular_1;
 
@@ -5322,7 +5601,7 @@ Regular.parse = function(str, options){
   }
   var ast = new Parser(str).parse();
   return !options.stringify? ast : JSON.stringify(ast);
-}
+};
 });
 
 var eventemitter2 = createCommonjsModule(function (module, exports) {
@@ -6054,6 +6333,8 @@ var eventemitter2 = createCommonjsModule(function (module, exports) {
 }();
 });
 
+/* eslint-disable guard-for-in */
+
 var ALWAYS_NOTIFY_KEY = '_(:з」∠)_';
 
 var Store = function Store( app ) {
@@ -6090,7 +6371,7 @@ Store.prototype.registerModel = function registerModel ( name, model ) {
 	} );
 };
 Store.prototype.registerActions = function registerActions ( actions ) {
-	if( this._actions ) {
+	if ( this._actions ) {
 		return console.error( 'actions already registered' );
 	}
 	this._actions = actions;
@@ -6106,7 +6387,7 @@ Store.prototype._commit = function _commit ( type, payload ) {
 		var truetype = parts[1];
 
 	var model = this._models[ name ];
-	if( model ) {
+	if ( model ) {
 		return model.commit( truetype, payload );
 	}
 };
@@ -6121,13 +6402,11 @@ Store.prototype.dispatch = function dispatch ( type, payload ) {
 	}, payload );
 };
 Store.prototype.notify = function notify ( name, type, payload ) {
-		var this$1 = this;
-
 	var cbs = ( this._subscribers[ name ] || [] ).concat( this._subscribers[ ALWAYS_NOTIFY_KEY ] );
 	var state = this._state;
 	for ( var i = 0, len = cbs.length; i < len; i++ ) {
 		var cb = cbs[ i ];
-		cb( { type: (name + "/" + type), payload: payload }, this$1._state );
+		cb( { type: (name + "/" + type), payload: payload }, state );
 	}
 };
 Store.prototype.notifyViews = function notifyViews () {
@@ -6137,7 +6416,6 @@ Store.prototype.notifyViews = function notifyViews () {
 	for ( var i in this._subscribers ) {
 		cbs = cbs.concat( this$1._subscribers[ i ] );
 	}
-	var state = this._state;
 	for ( var i$1 = 0, len = cbs.length; i$1 < len; i$1++ ) {
 		var cb = cbs[ i$1 ];
 		if ( cb._isFromView ) {
@@ -6193,12 +6471,12 @@ Model.prototype.subscribe = function subscribe ( fn ) {
 Model.prototype.commit = function commit ( type, payload ) {
 		var this$1 = this;
 
-	if( this._committing ) {
+	if ( this._committing ) {
 		return;
 	}
 
 	// invalid action
-	if( typeof type !== 'string' ) {
+	if ( typeof type !== 'string' ) {
 		return;
 	}
 
@@ -6206,7 +6484,7 @@ Model.prototype.commit = function commit ( type, payload ) {
 	var state = this._state;
 
 	for ( var i in reducers ) {
-		if( type === i ) {
+		if ( type === i ) {
 			var reducer = reducers[ i ];
 			this$1._committing = true;
 			reducer( state, payload );
@@ -6288,20 +6566,20 @@ var slice = [].slice, o2str = ({}).toString;
 // merge o2's properties to Object o1. 
 _.extend = function(o1, o2, override){
   for(var i in o2) { if(override || o1[i] === undefined){
-    o1[i] = o2[i]
+    o1[i] = o2[i];
   } }
   return o1;
-}
+};
 
 
 
 _.slice = function(arr, index){
   return slice.call(arr, index);
-}
+};
 
 _.typeOf = function typeOf (o) {
   return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
-}
+};
 
 //strict eql
 _.eql = function(o1, o2){
@@ -6316,7 +6594,7 @@ _.eql = function(o1, o2){
     return equal;
   }
   return o1 === o2;
-}
+};
 
 
 // small emitter 
@@ -6328,9 +6606,9 @@ _.emitable = (function(){
   var API = {
     once: function(event, fn){
       var callback = function(){
-        fn.apply(this, arguments)
-        this.off(event, callback)
-      }
+        fn.apply(this, arguments);
+        this.off(event, callback);
+      };
       return this.on(event, callback)
     },
     on: function(event, fn) {
@@ -6385,11 +6663,11 @@ _.emitable = (function(){
       if (!handles || !(calls = handles[event])) { return this; }
       for (var i = 0, len = calls.length; i < len; i++) {
         var fn = calls[i];
-        if( !ne.namespace || fn._ns === ne.namespace ) { fn.apply(this$1, args) }
+        if( !ne.namespace || fn._ns === ne.namespace ) { fn.apply(this$1, args); }
       }
       return this;
     }
-  }
+  };
   return function(obj){
       obj = typeof obj == "function" ? obj.prototype : obj;
       return _.extend(obj, API)
@@ -6402,14 +6680,14 @@ _.bind = function(fn, context){
   return function(){
     return fn.apply(context, arguments);
   }
-}
+};
 
 var rDbSlash = /\/+/g, // double slash
   rEndSlash = /\/$/;    // end slash
 
 _.cleanPath = function (path){
   return ("/" + path).replace( rDbSlash,"/" ).replace( rEndSlash, "" ) || "/";
-}
+};
 
 // normalize the path
 function normalizePath(path) {
@@ -6431,7 +6709,7 @@ function normalizePath(path) {
         preIndex = startAt + all.length;
         if( key ){
           matches += "(" + key + ")";
-          keys.push(key)
+          keys.push(key);
           return "("+( keyformat || "[\\w-]+")+")";
         }
         matches += "(" + index + ")";
@@ -6444,9 +6722,9 @@ function normalizePath(path) {
         } 
         if(mwild) { return "(.*)"; }
         if(swild) { return "([^\\/]*)"; }
-    })
+    });
 
-  if(preIndex !== path.length) { matches += path.slice(preIndex) }
+  if(preIndex !== path.length) { matches += path.slice(preIndex); }
 
   return {
     regexp: new RegExp("^" + regStr +"/?$"),
@@ -6456,14 +6734,14 @@ function normalizePath(path) {
 }
 
 _.log = function(msg, type){
-  typeof console !== "undefined" && console[type || "log"](msg)
-}
+  typeof console !== "undefined" && console[type || "log"](msg);
+};
 
 _.isPromise = function( obj ){
 
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 
-}
+};
 
 
 
@@ -6492,7 +6770,7 @@ _$1.extend( _$1.emitable( State$1 ), {
 
     if(_$1.typeOf(stateName) === "object"){
       for(var i in stateName){
-        this$1.state(i, stateName[i])
+        this$1.state(i, stateName[i]);
       }
       return this;
     }
@@ -6516,7 +6794,7 @@ _$1.extend( _$1.emitable( State$1 ), {
           manager: current.manager || current,
           name: stack.join("."),
           currentName: nextName
-        })
+        });
         current.hasNext = true;
         next.configUrl();
       }
@@ -6548,7 +6826,7 @@ _$1.extend( _$1.emitable( State$1 ), {
           }
           break;
         case "events": 
-          this$1.on(prop)
+          this$1.on(prop);
           break;
         default:
           this$1[i] = prop;
@@ -6611,7 +6889,7 @@ _$1.extend( _$1.emitable( State$1 ), {
 
       var param = {};
       for(var i =0,len=keys.length;i<len;i++){
-        param[keys[i]] = matched[i+1] 
+        param[keys[i]] = matched[i+1]; 
       }
       return param;
     }else{
@@ -6624,7 +6902,7 @@ _$1.extend( _$1.emitable( State$1 ), {
     throw new Error( 'please use option.async instead')
   }
 
-})
+});
 
 
 var state = State$1;
@@ -6647,7 +6925,7 @@ var b = module.exports = {
   off: "removeEventListener" in win ? 
       function(node,type,cb){return node.removeEventListener( type, cb )}
     : function(node,type,cb){return node.detachEvent( "on" + type, cb )}
-}
+};
 });
 
 // MIT
@@ -6728,8 +7006,8 @@ _$2.extend( _$2.emitable(Histery$1), {
   // the history teardown
   stop: function(){
 
-    browser.off(window, 'hashchange', this._checkPath)  
-    browser.off(window, 'popstate', this._checkPath)  
+    browser.off(window, 'hashchange', this._checkPath);  
+    browser.off(window, 'popstate', this._checkPath);  
     clearTimeout(this.tid);
     this.isStart = false;
     this._checkPath = null;
@@ -6779,13 +7057,13 @@ _$2.extend( _$2.emitable(Histery$1), {
 
     // 3 or 1 is matched
     if( this.mode !== HISTORY ){
-      this._setHash(this.location, to, options.replace)
+      this._setHash(this.location, to, options.replace);
       if( iframe && this.getPath(iframe.location) !== to ){
         if(!options.replace) { iframe.document.open().close(); }
-        this._setHash(this.iframe.location, to, options.replace)
+        this._setHash(this.iframe.location, to, options.replace);
       }
     }else{
-      history[options.replace? 'replaceState': 'pushState']( {}, options.title || "" , _$2.cleanPath( this.root + to ) )
+      history[options.replace? 'replaceState': 'pushState']( {}, options.title || "" , _$2.cleanPath( this.root + to ) );
     }
 
     if( !options.silent ) { this.emit('change', to); }
@@ -6805,9 +7083,9 @@ _$2.extend( _$2.emitable(Histery$1), {
       if(!hash) { return; }
       
       ev.preventDefault && ev.preventDefault();
-      self.nav( hash )
+      self.nav( hash );
       return (ev.returnValue = false);
-    } )
+    } );
   },
   _setHash: function(location, path, replace){
     var href = location.href.replace(/(javascript:|#).*$/, '');
@@ -6833,13 +7111,13 @@ _$2.extend( _$2.emitable(Histery$1), {
     // dont support history popstate but config the html5 mode
     if( this.mode !== HISTORY && this.html5){
 
-      hashInPathName = pathname.replace(this.rRoot, "")
+      hashInPathName = pathname.replace(this.rRoot, "");
       if(hashInPathName) { this.location.replace(this.root + this.prefix + hashInPathName); }
 
     }else if( this.mode === HISTORY /* && pathname === this.root*/){
 
       hash = this.location.hash.replace(this.prefix, "");
-      if(hash) { history.replaceState({}, document.title, _$2.cleanPath(this.root + hash)) }
+      if(hash) { history.replaceState({}, document.title, _$2.cleanPath(this.root + hash)); }
 
     }
   },
@@ -6856,7 +7134,7 @@ _$2.extend( _$2.emitable(Histery$1), {
     this.iframe.location.hash = '#' + path;
   }
   
-})
+});
 
 
 
@@ -6890,7 +7168,7 @@ function StateMan$1(options){
       cur = cur.parent;
     }
     document.title = typeof title === "function"? cur.title(): String( title || baseTitle ) ;
-  })
+  });
 
 }
 
@@ -6903,7 +7181,7 @@ _.extend( _.emitable( StateMan$1 ), {
 
       var active = this.active;
       if(typeof stateName === "string" && active){
-         stateName = stateName.replace("~", active.name)
+         stateName = stateName.replace("~", active.name);
          if(active.parent) { stateName = stateName.replace("^", active.parent.name || ""); }
       }
       // ^ represent current.parent
@@ -6938,7 +7216,7 @@ _.extend( _.emitable( StateMan$1 ), {
       }
 
       if(option.encode !== false){
-        var url = state$$1.encode(option.param)
+        var url = state$$1.encode(option.param);
         option.path = url;
         this.nav(url, {silent: true, replace: option.replace});
       }
@@ -6957,7 +7235,7 @@ _.extend( _.emitable( StateMan$1 ), {
       options.path = url;
 
       this.history.nav( url, _.extend({silent: true}, options));
-      if(!options.silent) { this._afterPathChange( _.cleanPath(url) , options , callback) }
+      if(!options.silent) { this._afterPathChange( _.cleanPath(url) , options , callback); }
 
       return this;
     },
@@ -7061,7 +7339,7 @@ _.extend( _.emitable( StateMan$1 ), {
         option.stop = function(){
           done(false);
           self.nav( prepath? prepath: "/", {silent:true});
-        }
+        };
         self.emit("begin", option);
 
       }
@@ -7076,16 +7354,16 @@ _.extend( _.emitable( StateMan$1 ), {
 
           if( notRejected===false ){
             // if reject in callForPermission, we will return to old 
-            prepath && this.nav( prepath, {silent: true})
+            prepath && this.nav( prepath, {silent: true});
 
-            done(false, 2)
+            done(false, 2);
 
             return this.emit('abort', option);
 
           } 
 
           // stop previous pending.
-          if(this.pending) { this.pending.stop() } 
+          if(this.pending) { this.pending.stop(); } 
           this.pending = option;
           this.path = option.path;
           this.current = option.current;
@@ -7096,7 +7374,7 @@ _.extend( _.emitable( StateMan$1 ), {
 
             if( notRejected === false ){
               this.current = this.active;
-              done(false)
+              done(false);
               return this.emit('abort', option);
             }
 
@@ -7106,9 +7384,9 @@ _.extend( _.emitable( StateMan$1 ), {
             option.phase = 'completion';
             return done()
 
-          }, this) )
+          }, this) );
 
-        }, this) )
+        }, this) );
 
       }else{
         self._checkQueryAndParam(baseState, option);
@@ -7128,7 +7406,7 @@ _.extend( _.emitable( StateMan$1 ), {
       if(!len) { return; }
 
       for(var i = 0; i < len; i++){
-        stash[i].call(this$1, option)
+        stash[i].call(this$1, option);
       }
     },
 
@@ -7146,12 +7424,12 @@ _.extend( _.emitable( StateMan$1 ), {
         if( notRejected === false ) { return callback( notRejected ); }
 
         // only actual transiton need update base state;
-        if( !callForPermit )  { this._checkQueryAndParam(parent, option) }
+        if( !callForPermit )  { this._checkQueryAndParam(parent, option); }
 
         option.basckward = false;
-        this._transit( parent, to, option, callForPermit,  callback)
+        this._transit( parent, to, option, callForPermit,  callback);
 
-      }, this) )
+      }, this) );
 
     },
 
@@ -7200,7 +7478,7 @@ _.extend( _.emitable( StateMan$1 ), {
         isPending = true;
 
         return done;
-      }
+      };
 
       function done( notRejected ){
         if( isDone ) { return; }
@@ -7213,7 +7491,7 @@ _.extend( _.emitable( StateMan$1 ), {
 
       option.stop = function(){
         done( false );
-      }
+      };
 
 
       this.active = applied;
@@ -7230,14 +7508,14 @@ _.extend( _.emitable( StateMan$1 ), {
       }
 
       // if haven't call option.async yet
-      if( !isPending ) { done( retValue ) }
+      if( !isPending ) { done( retValue ); }
 
     },
 
 
     _wrapPromise: function( promise, next ){
 
-      return promise.then( next, function(){next(false)}) ;
+      return promise.then( next, function(){next(false);}) ;
 
     },
 
@@ -7246,8 +7524,8 @@ _.extend( _.emitable( StateMan$1 ), {
       var fname = from.name;
       var tname = to.name;
 
-      var tsplit = tname.split('.')
-      var fsplit = fname.split('.')
+      var tsplit = tname.split('.');
+      var fsplit = fname.split('.');
 
       var tlen = tsplit.length;
       var flen = fsplit.length;
@@ -7326,7 +7604,7 @@ _.extend( _.emitable( StateMan$1 ), {
 
     }
 
-}, true)
+}, true);
 
 
 
@@ -7341,8 +7619,8 @@ var index = StateMan;
 
 // import CircularJSON from '../utils/circular-json';
 
-var view = function (Regular) {
-	var RouterView = Regular.extend( {
+var view = function (Component) {
+	var RouterView = Component.extend( {
 		name: 'router-view',
 		template: "\n\t\t\t<i ref=\"v\"></i>\n\t\t",
 		config: function config() {
@@ -7375,7 +7653,7 @@ var view = function (Regular) {
 		render: function render( component ) {
 			var comment = this._comment;
 			if ( !this._commentInserted ) {
-				Regular.dom.inject( comment, this.$refs.v, 'after' );
+				insertAfter( comment, this.$refs.v );
 				this._commentInserted = true;
 			}
 
@@ -7395,6 +7673,16 @@ var view = function (Regular) {
 			this._prevcomponent = component;
 		}
 	} );
+};
+
+function insertAfter( node, refer ) {
+	var next = refer.nextSibling;
+
+	if( next ){
+		next.parentNode.insertBefore( node, next );
+	} else {
+		refer.parentNode.appendChild( node );
+	}
 }
 
 var link = function (Regular) {
@@ -7402,7 +7690,7 @@ var link = function (Regular) {
 		name: 'router-link',
 		template: "\n\t\t\t<a href=\"{ to }\">{#inc this.$body}</a>\n\t\t"
 	});
-}
+};
 
 // maybe Regular or extended from Regular, either is ok
 var _Component;
@@ -7463,7 +7751,7 @@ function digestComponentDeps( routes ) {
 			var Ctor = Component.extend( extendOptions );
 			// register component on Ctor
 			for ( var i$1 in cps ) {
-				Ctor.component( i$1, cps[ i$1 ]._Ctor )
+				Ctor.component( i$1, cps[ i$1 ]._Ctor );
 			}
 			extendOptions._Ctor = Ctor;
 			return;
@@ -7692,6 +7980,8 @@ return Router;
 })));
 });
 
+/* eslint-disable guard-for-in */
+
 var RouterManager = function RouterManager( app ) {
 	var this$1 = this;
 
@@ -7713,7 +8003,7 @@ var RouterManager = function RouterManager( app ) {
 							// replaceState will replace state reference
 							// so get state in realtime when computes
 							var state = app._store.getState();
-							return getters[ c ]( state )
+							return getters[ c ]( state );
 						};
 					} else {
 						delete computed[ i ];
@@ -7740,7 +8030,7 @@ function walk( routes, fn ) {
 
 		var components = route.components || {};
 		if ( route.component ) {
-			components[ 'default' ] = route.component;
+			components.default = route.component;
 		}
 		walkComponents( components, fn );
 		if ( route.children ) {
@@ -7761,7 +8051,7 @@ function walkComponents( components, fn ) {
 
 // Credits: vue/vuex
 
-var devtoolsPlugin = function (options) { return function (store) {
+var devtoolsPlugin = function () { return function (store) {
 	var devtools = window.__REO_DEVTOOLS_HOOK__;
 
 	if ( !devtools ) {
@@ -7778,12 +8068,14 @@ var devtoolsPlugin = function (options) { return function (store) {
 	store.subscribe( function ( action, state ) {
 		devtools.emit( 'reo:reducer', action, state );
 	} );
-}; }
+}; };
 
 var App = (function (EventEmitter) {
 	function App() {
+		EventEmitter.call(this);
 		this._isRunning = false;
 		this.$store = this._store = new Store( this );
+		// extend from regular, so we can isolate from other apps
 		this._Base = index$1.extend();
 		this.managers = {
 			plugin: new PulginManager( this ),
@@ -7805,7 +8097,7 @@ var App = (function (EventEmitter) {
 		var state = ref.state; if ( state === void 0 ) state = {};
 		var reducers = ref.reducers; if ( reducers === void 0 ) reducers = {};
 
-		if( !name ) {
+		if ( !name ) {
 			throw new Error( 'please name your model' );
 		}
 
@@ -7820,7 +8112,7 @@ var App = (function (EventEmitter) {
 	App.prototype.getters = function getters ( getters ) {
 		if ( getters === void 0 ) getters = {};
 
-		if( this._getters ) {
+		if ( this._getters ) {
 			throw new Error( 'getters can only be called one time' );
 		}
 		this._getters = getters;
@@ -7843,9 +8135,9 @@ var App = (function (EventEmitter) {
 	return App;
 }(eventemitter2));
 
-var index = function() {
+var index = function () {
 	return new App();
-}
+};
 
 return index;
 
