@@ -6391,6 +6391,13 @@ Store.prototype._commit = function _commit ( type, payload ) {
 		return model.commit( truetype, payload );
 	}
 };
+Store.prototype.commit = function commit () {
+		var args = [], len = arguments.length;
+		while ( len-- ) args[ len ] = arguments[ len ];
+
+	return (ref = this)._commit.apply( ref, args );
+		var ref;
+};
 Store.prototype.dispatch = function dispatch ( type, payload ) {
 	if ( !this._actions[ type ] ) {
 		return console.error( ("action \"" + type + "\" is not found") );

@@ -54,6 +54,9 @@ class Store {
 			return model.commit( truetype, payload );
 		}
 	}
+	commit( ...args ) {
+		return this._commit( ...args );
+	}
 	dispatch( type, payload ) {
 		if ( !this._actions[ type ] ) {
 			return console.error( `action "${ type }" is not found` );
