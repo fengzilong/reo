@@ -22,7 +22,11 @@ export default class RouterManager {
 								// replaceState will replace state reference
 								// so get state in realtime when computes
 								const state = app._store.getState();
-								return getters[ c ]( state );
+								if ( getters && typeof getters[ c ] === 'function' ) {
+									return getters[ c ]( state );
+								} else {
+									console.warn( `getters[ '${ c }' ] is not defined or not valid` );
+								}
 							};
 						} else {
 							delete computed[ i ];

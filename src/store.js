@@ -41,9 +41,13 @@ class Store {
 		this._actions = actions;
 	}
 	_get( getterKey ) {
-		return this._app._getters &&
-			this._app._getters[ getterKey ] &&
-			this._app._getters[ getterKey ]( this.getState() );
+		const getters = this._app._getters;
+
+		if ( getters && typeof getters[ getterKey ] === 'function' ) {
+			return getters[ getterKey ]( this.getState() );
+		} else {
+			console.warn( `getters or getters[ '${ getterKey }' ] is not defined or not valid` );
+		}
 	}
 	_commit( type, payload ) {
 		const parts = type.split( '/' );
