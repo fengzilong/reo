@@ -24,9 +24,9 @@ export default class RouterManager {
 								const state = app._store.getState();
 								if ( getters && typeof getters[ c ] === 'function' ) {
 									return getters[ c ]( state );
-								} else {
-									console.warn( `getters[ '${ c }' ] is not defined or not valid` );
 								}
+
+								console.warn( `getters[ '${ c }' ] is not defined or not valid` );
 							};
 						} else {
 							delete computed[ i ];

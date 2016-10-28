@@ -45,9 +45,9 @@ class Store {
 
 		if ( getters && typeof getters[ getterKey ] === 'function' ) {
 			return getters[ getterKey ]( this.getState() );
-		} else {
-			console.warn( `getters or getters[ '${ getterKey }' ] is not defined or not valid` );
 		}
+
+		console.warn( `getters or getters[ '${ getterKey }' ] is not defined or not valid` );
 	}
 	_commit( type, payload ) {
 		const parts = type.split( '/' );
