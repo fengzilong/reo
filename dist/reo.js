@@ -6377,9 +6377,13 @@ Store.prototype.registerActions = function registerActions ( actions ) {
 	this._actions = actions;
 };
 Store.prototype._get = function _get ( getterKey ) {
-	return this._app._getters &&
-		this._app._getters[ getterKey ] &&
-		this._app._getters[ getterKey ]( this.getState() );
+	var getters = this._app._getters;
+
+	if ( getters && typeof getters[ getterKey ] === 'function' ) {
+		return getters[ getterKey ]( this.getState() );
+	}
+
+	console.warn( ("getters or getters[ '" + getterKey + "' ] is not defined or not valid") );
 };
 Store.prototype._commit = function _commit ( type, payload ) {
 	var parts = type.split( '/' );
@@ -6439,7 +6443,7 @@ Store.prototype.subscribe = function subscribe ( fn, names ) {
 	}
 
 	for ( var i = 0, len = names.length; i < len; i++ ) {
-		var name = names[ i ];
+			var name = names[ i ];
 		this$1._subscribers[ name ] = this$1._subscribers[ name ] || [];
 		this$1._subscribers[ name ].push( fn );
 	}
@@ -6536,12 +6540,9 @@ var ViewManager = function ViewManager( app ) {
 
 				// auto-subscribe
 				var models = this.models;
+				var update = function () { return this$1.$update(); };
 
-				var update = function () {
-					this$1.$update();
-				};
 				update._isFromView = true;
-
 				store.subscribe( update, models );
 			}
 		},
@@ -7910,14 +7911,14 @@ Router.prototype.start = function start ( selector ) {
 		}
 
 		transformedRoutes[ name ] = {
-			url: route.url,
+			url: route.path || route.url,
 			update: function update( e ) {
 				// reuse, do nothing
 			},
 			enter: function enter( e ) {
 				console.log( '@@route', name, 'enter' );
+					
 				var current = e.current;
-
 				var instanceMap = {};
 
 				// initialize component ctors
@@ -8010,7 +8011,11 @@ var RouterManager = function RouterManager( app ) {
 							// replaceState will replace state reference
 							// so get state in realtime when computes
 							var state = app._store.getState();
-							return getters[ c ]( state );
+							if ( getters && typeof getters[ c ] === 'function' ) {
+								return getters[ c ]( state );
+							}
+
+							console.warn( ("getters[ '" + c + "' ] is not defined or not valid") );
 						};
 					} else {
 						delete computed[ i ];
