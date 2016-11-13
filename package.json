@@ -1,6 +1,6 @@
 {
   "name": "reo",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "inspired by dva",
   "main": "dist/reo.js",
   "scripts": {
