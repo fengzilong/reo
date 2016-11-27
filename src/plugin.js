@@ -8,7 +8,8 @@ export default class PulginManager {
 		} );
 	}
 	use( plugin ) {
+		const Base = this._app._Base;
 		const store = this._app._store;
-		plugin( store );
+		plugin( Base, store );
 	}
 }

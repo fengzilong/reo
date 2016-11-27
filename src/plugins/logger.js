@@ -5,7 +5,7 @@ function createLogger( {
 	transformer = state => state,
 	actionTransformer = action => action
 } = {} ) {
-	return store => {
+	return ( Base, store ) => {
 		let prevState = JSON.parse( JSON.stringify( store.getState() ) );
 		store.subscribe( ( action, state ) => {
 			const nextState = JSON.parse( JSON.stringify( state ) );

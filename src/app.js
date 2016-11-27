@@ -39,7 +39,7 @@ class App extends EventEmitter {
 	}
 	getters( getters = {} ) {
 		if ( this._getters ) {
-			throw new Error( 'getters can only be called one time' );
+			throw new Error( 'getters can only be called once' );
 		}
 		this._getters = getters;
 	}

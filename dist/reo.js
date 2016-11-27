@@ -6526,8 +6526,9 @@ PulginManager.prototype.register = function register ( plugin ) {
 	} );
 };
 PulginManager.prototype.use = function use ( plugin ) {
+	var Base = this._app._Base;
 	var store = this._app._store;
-	plugin( store );
+	plugin( Base, store );
 };
 
 var ViewManager = function ViewManager( app ) {
@@ -8063,7 +8064,7 @@ function walkComponents( components, fn ) {
 
 // Credits: vue/vuex
 
-var devtoolsPlugin = function () { return function (store) {
+var devtoolsPlugin = function () { return function ( Base, store ) {
 	var devtools = window.__REO_DEVTOOLS_HOOK__;
 
 	if ( !devtools ) {
@@ -8125,7 +8126,7 @@ var App = (function (EventEmitter) {
 		if ( getters === void 0 ) getters = {};
 
 		if ( this._getters ) {
-			throw new Error( 'getters can only be called one time' );
+			throw new Error( 'getters can only be called once' );
 		}
 		this._getters = getters;
 	};

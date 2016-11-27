@@ -12,7 +12,7 @@ function createLogger( ref ) {
 	var transformer = ref.transformer; if ( transformer === void 0 ) transformer = function (state) { return state; };
 	var actionTransformer = ref.actionTransformer; if ( actionTransformer === void 0 ) actionTransformer = function (action) { return action; };
 
-	return function (store) {
+	return function ( Base, store ) {
 		var prevState = JSON.parse( JSON.stringify( store.getState() ) );
 		store.subscribe( function ( action, state ) {
 			var nextState = JSON.parse( JSON.stringify( state ) );
