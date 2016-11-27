@@ -1,4 +1,4 @@
-# reo <sup>wip</sup>
+# reo
 
 [![build][build-image]][build-url]
 
@@ -16,7 +16,7 @@ app.router( ... )
 app.start( '#app' )
 ```
 
-## Realworld example
+## Real world example
 
 ```js
 const app = reo()
