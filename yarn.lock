@@ -1676,9 +1676,9 @@ registry-url@^3.0.3:
   dependencies:
     rc "^1.0.1"
 
-regular-router@0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/regular-router/-/regular-router-0.0.4.tgz#40dcc8ee8a55e7ab70228e52f3ad83d83694185d"
+regular-router@0.0.5:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/regular-router/-/regular-router-0.0.5.tgz#cfb7f81c80e75c60c2749cb684c8f0129507cd8f"
 
 regularjs@^0.5.1:
   version "0.5.2"
