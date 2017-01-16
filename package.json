@@ -11,6 +11,10 @@
     "test": "npm run lint",
     "lint": "eslint src"
   },
+  "files": [
+    "dist",
+    "logger.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fengzilong/reo.git"

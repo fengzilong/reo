@@ -1,3 +1,5 @@
 node_modules
 npm-debug.log
 /design.html
+/dist
+/logger.js
