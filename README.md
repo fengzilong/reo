@@ -60,7 +60,7 @@ const Counter = {
 
 app.router( {
 	routes: [
-		{ url: '', component: Counter }
+		{ path: '/', component: Counter }
 	]
 } )
 
