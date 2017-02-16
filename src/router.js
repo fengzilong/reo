@@ -25,7 +25,7 @@ export default class RouterManager {
 						if ( getters[ c ] ) {
 							definition.computed[ i ] = () => {
 								// replaceState will replace state reference
-								// so get state in realtime when computes
+								// so get state reference when computes
 								const state = app._store.getState();
 								if ( getters && typeof getters[ c ] === 'function' ) {
 									return getters[ c ]( state );
@@ -53,23 +53,23 @@ function walk( routes, fn ) {
 	for ( let i = 0, len = routes.length; i < len; i++ ) {
 		const route = routes[ i ];
 
-		const components = route.components || {};
+		const definitions = route.components || {};
 		if ( route.component ) {
-			components.default = route.component;
+			definitions.default = route.component;
 		}
-		walkComponents( components, fn );
+		walkDefinitions( definitions, fn );
 		if ( route.children ) {
 			walk( route.children, fn );
 		}
 	}
 }
 
-function walkComponents( components, fn ) {
-	for ( let i in components ) {
-		const component = components[ i ];
-		fn( component );
-		if ( component.components ) {
-			walkComponents( component.components, fn );
+function walkDefinitions( definitions, fn ) {
+	for ( let i in definitions ) {
+		const definition = definitions[ i ];
+		fn( definition );
+		if ( definition.components ) {
+			walkDefinitions( definition.components, fn );
 		}
 	}
 }
