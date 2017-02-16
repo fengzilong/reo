@@ -83,7 +83,7 @@
 						next();
 					}
 				},
-				computed: {
+				getters: {
 					c: 'ccc'
 				},
 				template: `
@@ -102,7 +102,7 @@
 			app.router( {
 				routes: [
 					{
-						url: '/',
+						path: '/',
 						component: Counter
 					}
 				]

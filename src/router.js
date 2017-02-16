@@ -12,13 +12,18 @@ export default class RouterManager {
 			const getters = app._getters;
 			const options = this._options || {};
 			const { routes } = options;
-			walk( routes, component => {
-				const computed = component.computed;
-				for ( let i in computed ) {
-					const c = computed[ i ];
+			walk( routes, definition => {
+				const scopedGetters = definition.getters || {};
+
+				if ( !definition.computed ) {
+					definition.computed = {};
+				}
+
+				for ( let i in scopedGetters ) {
+					const c = scopedGetters[ i ];
 					if ( typeof c === 'string' ) {
 						if ( getters[ c ] ) {
-							computed[ i ] = () => {
+							definition.computed[ i ] = () => {
 								// replaceState will replace state reference
 								// so get state in realtime when computes
 								const state = app._store.getState();
@@ -28,8 +33,6 @@ export default class RouterManager {
 
 								console.warn( `getters[ '${ c }' ] is not defined or not valid` );
 							};
-						} else {
-							delete computed[ i ];
 						}
 					}
 				}
