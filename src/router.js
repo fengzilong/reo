@@ -8,7 +8,8 @@ export default class RouterManager {
 
 		const Base = app._Base;
 		Base.use( Router );
-		app.once( 'before-start', () => {
+
+		app.emitter.once( 'before-start', () => {
 			const getters = app._getters;
 			const options = this._options || {};
 			const { routes } = options;

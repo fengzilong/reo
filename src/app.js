@@ -1,5 +1,5 @@
 import Regular from 'regularjs';
-import EventEmitter from 'eventemitter2';
+import dush from 'dush';
 import Store from './store';
 import Model from './model';
 import PluginManager from './plugin';
@@ -7,10 +7,10 @@ import ViewManager from './view';
 import RouterManager from './router';
 import devtoolsPlugin from './plugins/devtools';
 
-class App extends EventEmitter {
+class App {
 	constructor() {
-		super();
 		this._isRunning = false;
+		this.emitter = dush();
 		this.$store = this._store = new Store( this );
 		// extend from regular, so we can isolate from other apps
 		this._Base = Regular.extend();
@@ -53,9 +53,9 @@ class App extends EventEmitter {
 
 		this._isRunning = true;
 
-		this.emit( 'before-start' );
+		this.emitter.emit( 'before-start' );
 		this.managers.router.start( selector );
-		this.emit( 'after-start' );
+		this.emitter.emit( 'after-start' );
 	}
 }
 

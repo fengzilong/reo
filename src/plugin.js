@@ -4,10 +4,11 @@ export default class PulginManager {
 	}
 
 	register( plugin ) {
+		const app = this._app;
 		const Base = this._app._Base;
 		const store = this._app._store;
 
-		this._app.once( 'before-start', () => {
+		app.emitter.once( 'before-start', () => {
 			plugin( Base, store );
 		} );
 	}
