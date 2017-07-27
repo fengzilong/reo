@@ -7,6 +7,8 @@ inspired by [dva](https://github.com/dvajs/dva) and [vuex](https://github.com/vu
 ## Overview
 
 ```js
+import reo from 'reo'
+
 const app = reo()
 app.use( plugin )
 app.model( ... )
@@ -19,6 +21,8 @@ app.start( '#app' )
 ## Real world example
 
 ```js
+import REO from 'reo'
+
 const app = reo()
 
 app.model( {
