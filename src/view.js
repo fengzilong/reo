@@ -6,7 +6,6 @@ export default class ViewManager {
 		Base.implement( {
 			events: {
 				$config() {
-					console.log( '$config' );
 					// auto-subscribe
 					const models = this.models;
 					const update = () => this.$update();

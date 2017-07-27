@@ -52,7 +52,7 @@ app.actions( {
 } )
 
 const Counter = {
-	computed: {
+	getters: {
 		c: 'count'
 	},
 	template: `
