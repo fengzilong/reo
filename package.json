@@ -35,7 +35,7 @@
     "eslint": "^3.8.0",
     "eslint-config-mo": "latest",
     "onchange": "^3.0.2",
-    "regular-router": "^1.0.0",
+    "regular-router": "^1.2.1",
     "regularjs": "^0.5.1"
   }
 }

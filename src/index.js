@@ -5,6 +5,4 @@ export default function () {
 	return new App();
 };
 
-export {
-	Regular
-};
+export { Regular };
