@@ -49,7 +49,7 @@ class Store {
 
 		console.warn( `getters or getters[ '${ getterKey }' ] is not defined or not valid` );
 	}
-	_commit( type, payload ) {
+	commit( type, payload ) {
 		const parts = type.split( '/' );
 		const [ name, truetype ] = parts;
 
@@ -57,9 +57,6 @@ class Store {
 		if ( model ) {
 			return model.commit( truetype, payload );
 		}
-	}
-	commit( ...args ) {
-		return this._commit( ...args );
 	}
 	dispatch( type, payload ) {
 		if ( !this._actions[ type ] ) {
