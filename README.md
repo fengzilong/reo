@@ -21,7 +21,7 @@ app.start( '#app' )
 ## Real world example
 
 ```js
-import REO from 'reo'
+import reo from 'reo'
 
 const app = reo()
 
