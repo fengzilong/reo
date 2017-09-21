@@ -15,7 +15,7 @@
 
 			app.model( {
 				name: 'counter',
-				state: { count: 0 },
+				state: { count: 1 },
 				reducers: {
 					add( state ) {
 						state.count++
@@ -40,7 +40,7 @@
 			} )
 
 			const Counter = {
-				computed: {
+				getters: {
 					c: 'count'
 				},
 				template: `
@@ -48,15 +48,18 @@
 					{ c }
 					<button on-click="{ this.dispatch( 'add' ) }">+</button>
 				`,
+				init() {
+					console.log( this );
+				}
 			}
 
-			app.router( {
-				routes: [
-					{ url: '/', component: Counter }
-				]
-			} )
+			// app.router( {
+			// 	routes: [
+			// 		{ url: '/', component: Counter }
+			// 	]
+			// } )
 
-			app.start( '#app' )
+			app.start( '#app', Counter )
 		</script>
 	</body>
 </html>

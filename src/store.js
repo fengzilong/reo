@@ -64,7 +64,7 @@ class Store {
 		}
 		return this._actions[ type ]( {
 			get: this._get.bind( this ),
-			commit: this._commit.bind( this ),
+			commit: this.commit.bind( this ),
 			dispatch: this.dispatch.bind( this ),
 		}, payload );
 	}

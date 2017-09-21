@@ -1,12 +1,14 @@
 {
   "name": "reo",
   "version": "1.2.0",
-  "description": "inspired by dva",
-  "main": "dist/reo.js",
+  "description": "regularjs and stateman based spa framework, inspired by dva and vuex",
+  "main": "dist/reo.common.js",
+  "module": "dist/reo.es.js",
+  "unpkg": "dist/reo.js",
   "scripts": {
     "dev": "onchange \"src\" -i -v -- npm run build",
     "build": "npm run build:reo && npm run build:logger",
-    "build:reo": "bili --out-dir dist --format umd --compress --map",
+    "build:reo": "bili --out-dir dist --format all --compress --map",
     "build:logger": "bili src/plugins/logger.js --out-dir ./ --format umd --module-name logger --filename logger",
     "test": "npm run lint",
     "lint": "eslint src",
@@ -36,7 +38,7 @@
     "eslint": "^3.8.0",
     "eslint-config-mo": "latest",
     "onchange": "^3.0.2",
-    "regular-router": "^1.2.1",
+    "regular-router": "^1.3.2",
     "regularjs": "^0.5.1"
   }
 }

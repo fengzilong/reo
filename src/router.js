@@ -1,6 +1,7 @@
 /* eslint-disable guard-for-in */
 
 import Router from 'regular-router';
+import registerGetters from './register-getters';
 
 export default class RouterManager {
 	constructor( app ) {
@@ -10,33 +11,19 @@ export default class RouterManager {
 		Base.use( Router );
 
 		app.emitter.once( 'before-start', () => {
-			const getters = app._getters;
-			const options = this._options || {};
-			const { routes } = options;
+			const { routes } = this._options || {};
+
+			if ( !routes ) {
+				return
+			}
+
+			const getters = app._getters || {};
+			const store = app._store;
+
 			walk( routes, definition => {
-				const scopedGetters = definition.getters || {};
-
-				if ( !definition.computed ) {
-					definition.computed = {};
-				}
-
-				for ( let i in scopedGetters ) {
-					const c = scopedGetters[ i ];
-					if ( typeof c === 'string' ) {
-						if ( getters[ c ] ) {
-							definition.computed[ i ] = () => {
-								// replaceState will replace state reference
-								// so get state reference when computes
-								const state = app._store.getState();
-								if ( getters && typeof getters[ c ] === 'function' ) {
-									return getters[ c ]( state );
-								}
-
-								console.warn( `getters[ '${ c }' ] is not defined or not valid` );
-							};
-						}
-					}
-				}
+				registerGetters( definition, {
+					store, getters
+				} )
 			} );
 		} );
 	}
