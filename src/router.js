@@ -14,7 +14,7 @@ export default class RouterManager {
 			const { routes } = this._options || {};
 
 			if ( !routes ) {
-				return
+				return;
 			}
 
 			const getters = app._getters || {};
@@ -23,7 +23,7 @@ export default class RouterManager {
 			walk( routes, definition => {
 				registerGetters( definition, {
 					store, getters
-				} )
+				} );
 			} );
 		} );
 	}

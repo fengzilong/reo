@@ -50,7 +50,7 @@ class App {
 	}
 	start( selector, Component ) {
 		if ( this._isRunning ) {
-			console.warn( 'Cannot start app twice' )
+			console.warn( 'Cannot start app twice' );
 			return;
 		}
 
@@ -71,7 +71,7 @@ class App {
 			if ( typeof selector === 'string' ) {
 				mountNode = document.querySelector( selector || 'body' );
 			} else {
-				mountNode = selector
+				mountNode = selector;
 			}
 			new Ctor().$inject( mountNode );
 		}
