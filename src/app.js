@@ -1,34 +1,33 @@
 import Regular from 'regularjs';
-import { installSync } from 'regular-router';
 import dush from 'dush';
+import Router, { installSync } from 'regular-router';
 import Store from './store';
 import Model from './model';
-import PluginManager from './plugin';
-import ViewManager from './view';
-import RouterManager from './router';
-import registerGetters from './register-getters';
-import devtoolsPlugin from './plugins/devtools';
+import connect from './connect';
+import devtools from './plugins/devtools';
 
 class App {
 	constructor() {
 		this._isRunning = false;
 		this.emitter = dush();
 		this.$store = this._store = new Store( this );
-		// extend from regular, so we can isolate from other apps
+		// isolate from other instances
 		this._Base = Regular.extend();
-		this.managers = {
-			plugin: new PluginManager( this ),
-			view: new ViewManager( this ),
-			router: new RouterManager( this )
-		};
-		this.use( devtoolsPlugin() );
+		this._Base.use( Router );
+		this.use( devtools() );
 	}
 	use( plugin ) {
-		this.managers.plugin.register( plugin );
+		const app = this._app;
+		const Base = this._app._Base;
+		const store = this._app._store;
+
+		app.emitter.once( 'before-start', () => {
+			plugin( Base, store );
+		} );
 	}
 	model( { name, state = {}, reducers = {} } = {} ) {
 		if ( !name ) {
-			throw new Error( 'please name your model' );
+			throw new Error( 'Expect a name for model' );
 		}
 
 		const model = new Model( { state, reducers } );
@@ -36,7 +35,7 @@ class App {
 
 		return model;
 	}
-	actions( actions ) {
+	actions( actions = {} ) {
 		this._store.registerActions( actions );
 	}
 	getters( getters = {} ) {
@@ -45,8 +44,8 @@ class App {
 		}
 		this._getters = getters;
 	}
-	router( options ) {
-		this.managers.router.set( options );
+	router( options = {} ) {
+		this._routerOptions = options;
 	}
 	start( selector, Component ) {
 		if ( this._isRunning ) {
@@ -56,15 +55,25 @@ class App {
 
 		this._isRunning = true;
 
+		// connect store and view
+		const { routes } = this._routerOptions;
+		connect( {
+			Base: this._Base,
+			store: this._store,
+			getters: this._getters,
+			routes,
+			Component,
+		} );
+
 		this.emitter.emit( 'before-start' );
+
 		if ( typeof Component === 'undefined' ) {
 			// start with router
-			this.managers.router.start( selector );
+			const router = new Router( this._routerOptions );
+			this.$router = router;
+			router.start( selector );
 		} else {
 			// start directly
-			const getters = this._getters;
-			const store = this._store;
-			registerGetters( Component, { store, getters } );
 			const Ctor = installSync( Component, this._Base );
 
 			let mountNode;
@@ -75,6 +84,7 @@ class App {
 			}
 			new Ctor().$inject( mountNode );
 		}
+
 		this.emitter.emit( 'after-start' );
 	}
 }
