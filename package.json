@@ -34,10 +34,12 @@
   "dependencies": {},
   "devDependencies": {
     "bili": "^0.17.4",
-    "dush": "^3.0.5",
     "eslint": "^3.8.0",
     "eslint-config-mo": "latest",
-    "onchange": "^3.0.2",
+    "onchange": "^3.0.2"
+  },
+  "dependencies": {
+    "dush": "^3.0.5",
     "regular-router": "^1.3.2",
     "regularjs": "^0.5.1"
   }
