@@ -1,6 +1,6 @@
 {
   "name": "reo",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "regularjs and stateman based spa framework, inspired by dva and vuex",
   "main": "dist/reo.common.js",
   "module": "dist/reo.es.js",
@@ -31,16 +31,15 @@
     "url": "https://github.com/fengzilong/reo/issues"
   },
   "homepage": "https://github.com/fengzilong/reo#readme",
-  "dependencies": {},
+  "dependencies": {
+    "dush": "^3.0.5",
+    "regular-router": "^1.3.2"
+  },
   "devDependencies": {
     "bili": "^0.17.4",
     "eslint": "^3.8.0",
     "eslint-config-mo": "latest",
     "onchange": "^3.0.2"
-  },
-  "dependencies": {
-    "dush": "^3.0.5",
-    "regular-router": "^1.3.2"
   },
   "peerDependencies": {
     "regularjs": "^0.5.1"
