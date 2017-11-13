@@ -17,11 +17,10 @@ class App {
 		this.use( devtools() );
 	}
 	use( plugin ) {
-		const app = this._app;
-		const Base = this._app._Base;
-		const store = this._app._store;
+		const Base = this._Base;
+		const store = this._store;
 
-		app.emitter.once( 'before-start', () => {
+		this.emitter.once( 'before-start', () => {
 			plugin( Base, store );
 		} );
 	}
