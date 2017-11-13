@@ -42,6 +42,6 @@
     "onchange": "^3.0.2"
   },
   "peerDependencies": {
-    "regularjs": "^0.5.1"
+    "regularjs": "0.x"
   }
 }
