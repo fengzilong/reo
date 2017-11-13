@@ -1,6 +1,6 @@
 {
   "name": "reo",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "regularjs and stateman based spa framework, inspired by dva and vuex",
   "main": "dist/reo.common.js",
   "module": "dist/reo.es.js",
