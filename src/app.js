@@ -11,6 +11,7 @@ class App {
 		this._isRunning = false;
 		this.emitter = dush();
 		this.$store = this._store = new Store( this );
+		this.$router = new Router();
 		// isolate from other instances
 		this._Base = Regular.extend();
 		this._Base.use( Router );
@@ -69,9 +70,8 @@ class App {
 
 		if ( typeof Component === 'undefined' ) {
 			// start with router
-			const router = new Router( this._routerOptions );
-			this.$router = router;
-			router.start( selector );
+			this.$router.configure( this._routerOptions );
+			this.$router.start( selector );
 		} else {
 			// start directly
 			const Ctor = installSync( Component, this._Base );

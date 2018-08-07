@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "dush": "^3.0.5",
-    "regular-router": "^1.3.2",
+    "regular-router": "^1.4.0",
     "regularjs": "^0.5.1"
   }
 }
