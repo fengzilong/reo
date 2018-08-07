@@ -2,7 +2,7 @@
 
 [![build][build-image]][build-url]
 
-inspired by [dva](https://github.com/dvajs/dva) and [vuex](https://github.com/vuejs/vuex)
+inspired by [redux](https://github.com/reactjs/redux), [vuex](https://github.com/vuejs/vuex) and [choo](https://github.com/choojs/choo)
 
 ## Overview
 
