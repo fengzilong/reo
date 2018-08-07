@@ -1,8 +1,8 @@
-import Regular from 'regularjs';
-import App from './app';
+import Regular from 'regularjs'
+import App from './app'
 
 export default function () {
-	return new App();
+  return new App()
 }
 
-export { Regular };
+export { Regular }

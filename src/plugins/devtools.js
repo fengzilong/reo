@@ -1,20 +1,20 @@
 // Credits: vue/vuex
 
 export default () => ( Base, store ) => {
-	const devtools = window.__REO_DEVTOOLS_HOOK__;
+  const devtools = window.__REO_DEVTOOLS_HOOK__
 
-	if ( !devtools ) {
-		return;
-	}
+  if ( !devtools ) {
+    return
+  }
 
-	store._devtools = devtools;
+  store._devtools = devtools
 
-	devtools.emit( 'reo:init', store );
-	devtools.on( 'reo:travel-to-state', state => {
-		store.replaceState( state );
-	} );
+  devtools.emit( 'reo:init', store )
+  devtools.on( 'reo:travel-to-state', state => {
+    store.replaceState( state )
+  } )
 
-	store.subscribe( ( action, state ) => {
-		devtools.emit( 'reo:reducer', action, state );
-	} );
-};
+  store.subscribe( ( action, state ) => {
+    devtools.emit( 'reo:reducer', action, state )
+  } )
+}
