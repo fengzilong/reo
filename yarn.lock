@@ -3029,9 +3029,9 @@ regjsparser@^0.3.0:
   dependencies:
     jsesc "~0.5.0"
 
-regular-router@^1.4.1:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/regular-router/-/regular-router-1.4.1.tgz#0211d1617e3670428d2f911ab12979fd8c619f5c"
+regular-router@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/regular-router/-/regular-router-2.0.0.tgz#d7349b541d6e07b9d19abb966d0f705438f74a0c"
   dependencies:
     stateman "^0.2.0"
 

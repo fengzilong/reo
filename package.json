@@ -33,7 +33,7 @@
   "homepage": "https://github.com/fengzilong/reo#readme",
   "dependencies": {
     "dush": "^3.0.5",
-    "regular-router": "^1.4.1"
+    "regular-router": "2.0.0"
   },
   "devDependencies": {
     "bili": "^3.1.2",
