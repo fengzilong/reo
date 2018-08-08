@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "onchange \"src\" -i -v -- npm run build",
     "build": "npm run build:reo && npm run build:logger",
-    "build:reo": "bili --out-dir dist --format cjs,umd,umd-min,es,iife --external regularjs --name reo",
+    "build:reo": "bili --out-dir dist --format cjs,umd,umd-min,es,iife --external regularjs,regular-router --global.regular-router RegularRouter --name reo",
     "build:logger": "bili src/plugins/logger.js --out-dir ./ --format umd --module-name logger --name logger",
     "test": "npm run lint",
     "lint": "eslint src",
@@ -33,7 +33,7 @@
   "homepage": "https://github.com/fengzilong/reo#readme",
   "dependencies": {
     "dush": "^3.0.5",
-    "regular-router": "2.0.0"
+    "regular-router": "^2.0.1"
   },
   "devDependencies": {
     "bili": "^3.1.2",
